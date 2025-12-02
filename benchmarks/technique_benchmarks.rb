@@ -30,6 +30,7 @@ module TechniqueBenchmarks
     results.concat(nil_handling_techniques(iterations))
     results.concat(object_duplication_techniques(iterations))
     results.concat(method_invocation_techniques(iterations))
+    results.concat(block_yield_techniques(iterations))
 
     results
   end
@@ -587,6 +588,56 @@ module TechniqueBenchmarks
         result = 0
         500_000.times { result = obj.__send__(method_name) }
         result
+      }
+    ]
+  end
+
+  # === BLOCK/YIELD PERFORMANCE ===
+  def block_yield_techniques(iterations)
+    puts "\n--- Block/Yield: 1M iterations ---"
+
+    # Helper methods for yield testing
+    def self.with_yield(n)
+      n.times { yield }
+    end
+
+    def self.with_block(n, &block)
+      n.times { block.call }
+    end
+
+    def self.nested_yield(n)
+      with_yield(n) { yield }
+    end
+
+    my_proc = Proc.new { 1 + 1 }
+    my_lambda = lambda { 1 + 1 }
+    n = 1_000_000
+    arr = Array.new(500_000) { rand(100) }
+
+    [
+      BenchmarkRunner.run(:name => "BLOCK: yield", :iterations => iterations) {
+        with_yield(n) { 1 + 1 }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: block.call", :iterations => iterations) {
+        with_block(n) { 1 + 1 }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: nested yield", :iterations => iterations) {
+        nested_yield(n) { 1 + 1 }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: proc.call", :iterations => iterations) {
+        n.times { my_proc.call }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: lambda.call", :iterations => iterations) {
+        n.times { my_lambda.call }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: each { }", :iterations => iterations) {
+        arr.each { |x| x + 1 }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: map { }", :iterations => iterations) {
+        arr.map { |x| x + 1 }
+      },
+      BenchmarkRunner.run(:name => "BLOCK: select { }", :iterations => iterations) {
+        arr.select { |x| x > 50 }
       }
     ]
   end
