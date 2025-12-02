@@ -19,7 +19,8 @@ class BenchmarkComparator
     'XFORM:' => 'Transform',
     'CONV:' => 'Number Conversion',
     'NIL:' => 'Nil Handling',
-    'DUP:' => 'Object Duplication'
+    'DUP:' => 'Object Duplication',
+    'CALL:' => 'Method Invocation'
   }
 
   def initialize(files)

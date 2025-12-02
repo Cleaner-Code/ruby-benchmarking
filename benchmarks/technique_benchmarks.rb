@@ -29,6 +29,7 @@ module TechniqueBenchmarks
     results.concat(number_conversion_techniques(iterations))
     results.concat(nil_handling_techniques(iterations))
     results.concat(object_duplication_techniques(iterations))
+    results.concat(method_invocation_techniques(iterations))
 
     results
   end
@@ -543,6 +544,48 @@ module TechniqueBenchmarks
       BenchmarkRunner.run(:name => "DUP: to_h", :iterations => iterations) {
         result = []
         100_000.times { result << template.to_h }
+        result
+      }
+    ]
+  end
+
+  # === METHOD INVOCATION ===
+  def method_invocation_techniques(iterations)
+    puts "\n--- Method Invocation: 500k calls ---"
+
+    # Simple test object
+    obj = Object.new
+    def obj.test_method
+      42
+    end
+
+    method_name = :test_method
+    bound_method = obj.method(:test_method)
+
+    [
+      BenchmarkRunner.run(:name => "CALL: direct", :iterations => iterations) {
+        result = 0
+        500_000.times { result = obj.test_method }
+        result
+      },
+      BenchmarkRunner.run(:name => "CALL: send", :iterations => iterations) {
+        result = 0
+        500_000.times { result = obj.send(method_name) }
+        result
+      },
+      BenchmarkRunner.run(:name => "CALL: public_send", :iterations => iterations) {
+        result = 0
+        500_000.times { result = obj.public_send(method_name) }
+        result
+      },
+      BenchmarkRunner.run(:name => "CALL: method.call", :iterations => iterations) {
+        result = 0
+        500_000.times { result = bound_method.call }
+        result
+      },
+      BenchmarkRunner.run(:name => "CALL: __send__", :iterations => iterations) {
+        result = 0
+        500_000.times { result = obj.__send__(method_name) }
         result
       }
     ]
