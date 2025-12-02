@@ -76,6 +76,9 @@ module BenchmarkRunner
   def self.get_time
     if HAS_CLOCK_MONOTONIC
       Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    elsif RUBY_ENGINE == 'jruby'
+      # Use Java's nanoTime for better precision on older JRuby
+      java.lang.System.nanoTime / 1_000_000_000.0
     else
       Time.now.to_f
     end

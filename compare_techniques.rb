@@ -32,44 +32,65 @@ class BenchmarkComparator
         :full_name => data['metadata']['ruby_version']
       }
     end
-    @col_width = 12
+    @output = []
   end
 
   def short_name(version)
     if version.include?('JRuby 1.7')
-      'JRuby1.7'
+      'JRuby 1.7'
     elsif version.include?('JRuby')
-      'JRuby10'
+      'JRuby 10'
     else
       'MRI'
     end
   end
 
   def compare
-    puts "=" * 120
-    puts "BENCHMARK COMPARISON: #{@results.map { |r| r[:name] }.join(' vs ')}"
-    puts "=" * 120
-    puts
-    @results.each { |r| puts "#{r[:name].ljust(10)}: #{r[:full_name]}" }
-
     @summary = {}
     @results.each { |r| @summary[r[:name]] = { :technique_wins => 0, :op_wins => 0, :best_technique => 0 } }
 
+    write_header
     compare_techniques
     compare_operations
-    print_summary
-    print_recommendations
+    write_summary
+    write_recommendations
+
+    @output.join("\n")
+  end
+
+  def save(filename)
+    content = compare
+    File.write(filename, content)
+    puts "Report saved to: #{filename}"
+    filename
   end
 
   private
+
+  def out(line = "")
+    @output << line
+  end
+
+  def write_header
+    timestamp = Time.now.strftime("%Y-%m-%d %H:%M:%S")
+    out "# Ruby Benchmark Comparison"
+    out
+    out "_Generated: #{timestamp}_"
+    out
+    out "## Versions Compared"
+    out
+    @results.each { |r| out "- **#{r[:name]}**: `#{r[:full_name]}`" }
+    out
+  end
 
   def compare_techniques
     techniques_by_result = @results.map { |r| r[:data]['techniques'] || [] }
     return if techniques_by_result.all?(&:empty?)
 
-    puts "\n#{'=' * 120}"
-    puts "TECHNIQUE COMPARISONS (Best Approaches)"
-    puts "=" * 120
+    out "## Technique Comparisons"
+    out
+    out "Format: **time** (gc, heap MB) | \\* = best for that Ruby"
+    out
 
     TECHNIQUE_CATEGORIES.each do |prefix, category_name|
       compare_technique_category(prefix, category_name, techniques_by_result)
@@ -77,87 +98,96 @@ class BenchmarkComparator
   end
 
   def compare_technique_category(prefix, category_name, techniques_by_result)
-    # Get results for each Ruby version
     results_per_ruby = techniques_by_result.map { |t| t.select { |b| b['name'].start_with?(prefix) } }
     return if results_per_ruby.all?(&:empty?)
 
-    puts "\n--- #{category_name} ---"
+    out "### #{category_name}"
+    out
 
-    # Header
-    header = "%-26s" % "Technique"
-    @results.each { |r| header += " %#{@col_width}s" % r[:name] }
-    header += "  Winner"
-    puts header
-    puts "-" * (28 + (@col_width + 1) * @results.size + 10)
+    # Table header
+    header = "| Technique |"
+    separator = "|:----------|"
+    @results.each do |r|
+      header += " #{r[:name]} |"
+      separator += "----------:|"
+    end
+    header += " Winner |"
+    separator += ":------:|"
+    out header
+    out separator
 
-    # Get all technique names (union of all results)
     all_names = results_per_ruby.flatten.map { |b| b['name'] }.uniq
 
-    # Calculate rankings per Ruby version
     rankings = results_per_ruby.map do |results|
       sorted = results.sort_by { |b| get_time(b) }
       sorted.each_with_index.to_h { |b, i| [b['name'], i + 1] }
     end
 
-    # Find winner for each Ruby version
     winners = results_per_ruby.map do |results|
       next nil if results.empty?
       results.min_by { |b| get_time(b) }['name']
     end
 
     all_names.sort.each do |name|
-      times = results_per_ruby.map do |results|
-        bench = results.find { |b| b['name'] == name }
-        bench ? get_time(bench) : nil
+      benches = results_per_ruby.map do |results|
+        results.find { |b| b['name'] == name }
       end
 
-      # Skip if no data
+      times = benches.map { |b| b ? get_time(b) : nil }
       next if times.compact.empty?
 
-      # Find fastest
       valid_times = times.each_with_index.select { |t, _| t }.map { |t, i| [t, i] }
       fastest_idx = valid_times.min_by { |t, _| t }[1] if valid_times.any?
 
       short_name = name.sub(/^[A-Z]+:\s*/, '')
-      row = "%-26s" % short_name[0..25]
+      row = "| #{short_name} |"
 
-      times.each_with_index do |time, i|
-        if time.nil?
-          row += " %#{@col_width}s" % "-"
+      benches.each_with_index do |bench, i|
+        if bench.nil?
+          row += " - |"
         else
-          rank = rankings[i][name]
-          marker = (name == winners[i]) ? "*" : " "
-          fast_marker = (i == fastest_idx) ? ">" : " "
-          row += " %#{@col_width}s" % ("#{fast_marker}%.4f%s" % [time, marker])
+          time = get_time(bench)
+          gc = get_gc_count(bench)
+          heap = get_heap_mb(bench)
+          marker = (name == winners[i]) ? "\\*" : ""
 
-          # Count wins
+          # Build info string
+          info_parts = []
+          info_parts << gc.to_s if gc > 0
+          info_parts << "#{heap}MB" if heap > 0
+          info_str = info_parts.empty? ? "" : " (#{info_parts.join(', ')})"
+
+          time_str = "%.4f#{marker}#{info_str}" % time
           if i == fastest_idx
+            row += " **#{time_str}** |"
             @summary[@results[i][:name]][:technique_wins] += 1
+          else
+            row += " #{time_str} |"
           end
         end
       end
 
       winner_name = fastest_idx ? @results[fastest_idx][:name] : "-"
-      row += "  #{winner_name}"
-      puts row
+      row += " #{winner_name} |"
+      out row
     end
 
-    # Show best technique per Ruby
-    best_line = "  >> Best: "
+    # Best technique summary
     winner_techniques = []
     winners.each_with_index do |w, i|
       next unless w
-      winner_techniques << "#{@results[i][:name]}=#{w.sub(/^[A-Z]+:\s*/, '')}"
+      winner_techniques << "**#{@results[i][:name]}**: #{w.sub(/^[A-Z]+:\s*/, '')}"
       @summary[@results[i][:name]][:best_technique] += 1
     end
 
-    # Check if all agree
     unique_winners = winners.compact.uniq
+    out
     if unique_winners.size == 1
-      puts "  >> ALL agree: #{unique_winners.first.sub(/^[A-Z]+:\s*/, '')}"
+      out "> **All agree**: #{unique_winners.first.sub(/^[A-Z]+:\s*/, '')}"
     else
-      puts "  >> " + winner_techniques.join(" | ")
+      out "> #{winner_techniques.join(' | ')}"
     end
+    out
   end
 
   def compare_operations
@@ -167,25 +197,27 @@ class BenchmarkComparator
     end
     return if ops_by_result.all?(&:empty?)
 
-    puts "\n#{'=' * 120}"
-    puts "OPERATION BENCHMARKS"
-    puts "=" * 120
+    out "## Operation Benchmarks"
+    out
+    out "Format: **time** (gc collections, heap MB)"
+    out
 
-    # Header
-    header = "%-30s" % "Benchmark"
-    @results.each { |r| header += " %#{@col_width}s" % r[:name] }
-    header += "  Winner   Factor"
-    puts header
-    puts "-" * 120
+    header = "| Benchmark |"
+    separator = "|:----------|"
+    @results.each do |r|
+      header += " #{r[:name]} |"
+      separator += "----------:|"
+    end
+    header += " Winner | Factor |"
+    separator += ":------:|-------:|"
+    out header
+    out separator
 
-    # Get all operation names
     all_names = ops_by_result.flatten.map { |b| b['name'] }.uniq
 
     all_names.sort.each do |name|
-      times = ops_by_result.map do |ops|
-        bench = ops.find { |b| b['name'] == name }
-        bench ? get_time(bench) : nil
-      end
+      benches = ops_by_result.map { |ops| ops.find { |b| b['name'] == name } }
+      times = benches.map { |b| b ? get_time(b) : nil }
 
       next if times.compact.empty?
 
@@ -194,89 +226,85 @@ class BenchmarkComparator
       slowest_time = valid_times.max_by { |t, _| t }[0] if valid_times.any?
       fastest_time = valid_times.min_by { |t, _| t }[0] if valid_times.any?
 
-      row = "%-30s" % name[0..29]
+      row = "| #{name} |"
 
-      times.each_with_index do |time, i|
-        if time.nil?
-          row += " %#{@col_width}s" % "-"
+      benches.each_with_index do |bench, i|
+        if bench.nil?
+          row += " - |"
         else
-          marker = (i == fastest_idx) ? ">" : " "
-          row += " %#{@col_width}s" % ("#{marker}%.4f" % time)
+          time = get_time(bench)
+          gc = get_gc_count(bench)
+          heap = get_heap_mb(bench)
 
+          # Build info string
+          info_parts = []
+          info_parts << gc.to_s if gc > 0
+          info_parts << "#{heap}MB" if heap > 0
+          info_str = info_parts.empty? ? "" : " (#{info_parts.join(', ')})"
+
+          time_str = "%.4f#{info_str}" % time
           if i == fastest_idx
+            row += " **#{time_str}** |"
             @summary[@results[i][:name]][:op_wins] += 1
+          else
+            row += " #{time_str} |"
           end
         end
       end
 
       winner_name = fastest_idx ? @results[fastest_idx][:name] : "-"
       factor = (fastest_time && slowest_time && fastest_time > 0) ? slowest_time / fastest_time : 1.0
-      row += "  %-8s %5.1fx" % [winner_name, factor]
-      puts row
+      row += " #{winner_name} | %.1fx |" % factor
+      out row
     end
-
-    print_gc_comparison(ops_by_result)
+    out
   end
 
-  def print_gc_comparison(ops_by_result)
-    puts "\n--- GC & Memory ---"
+  def write_summary
+    out "## Summary"
+    out
 
-    header = "%-30s" % "Benchmark"
-    @results.each { |r| header += " %#{@col_width}s" % "#{r[:name]} GC" }
-    puts header
-    puts "-" * (32 + (@col_width + 1) * @results.size)
-
-    all_names = ops_by_result.flatten.map { |b| b['name'] }.uniq
-
-    all_names.sort.each do |name|
-      benches = ops_by_result.map { |ops| ops.find { |b| b['name'] == name } }
-      next if benches.compact.empty?
-
-      row = "%-30s" % name[0..29]
-      benches.each do |bench|
-        if bench.nil?
-          row += " %#{@col_width}s" % "-"
-        else
-          gc = get_gc_count(bench)
-          row += " %#{@col_width}d" % gc
-        end
-      end
-      puts row
-    end
-  end
-
-  def print_summary
-    puts "\n#{'=' * 120}"
-    puts "SUMMARY"
-    puts "=" * 120
-
-    puts "\nTechnique Comparisons (individual technique speed wins):"
+    out "### Technique Wins"
+    out
+    out "| Ruby | Wins |"
+    out "|:-----|-----:|"
     @results.each do |r|
-      puts "  #{r[:name]}: #{@summary[r[:name]][:technique_wins]} wins"
+      out "| #{r[:name]} | #{@summary[r[:name]][:technique_wins]} |"
     end
+    out
 
-    puts "\nOperation Benchmarks (fastest implementation):"
+    out "### Operation Wins"
+    out
+    out "| Ruby | Wins |"
+    out "|:-----|-----:|"
     @results.each do |r|
-      puts "  #{r[:name]}: #{@summary[r[:name]][:op_wins]} wins"
+      out "| #{r[:name]} | #{@summary[r[:name]][:op_wins]} |"
     end
+    out
 
-    # Overall
-    puts "\nOverall fastest (technique + operation wins):"
+    out "### Overall"
+    out
+    out "| Ruby | Total Wins |"
+    out "|:-----|----------:|"
     totals = @results.map do |r|
       total = @summary[r[:name]][:technique_wins] + @summary[r[:name]][:op_wins]
       [r[:name], total]
     end.sort_by { |_, t| -t }
-
-    totals.each { |name, total| puts "  #{name}: #{total} total wins" }
+    totals.each { |name, total| out "| #{name} | #{total} |" }
+    out
   end
 
-  def print_recommendations
+  def write_recommendations
     techniques_by_result = @results.map { |r| r[:data]['techniques'] || [] }
     return if techniques_by_result.all?(&:empty?)
 
-    puts "\n#{'=' * 120}"
-    puts "OPTIMIZATION RECOMMENDATIONS"
-    puts "=" * 120
+    out "## Recommendations"
+    out
+    out "Best technique to use for each category:"
+    out
+
+    out "| Category | Recommendation |"
+    out "|:---------|:---------------|"
 
     TECHNIQUE_CATEGORIES.each do |prefix, category_name|
       results_per_ruby = techniques_by_result.map { |t| t.select { |b| b['name'].start_with?(prefix) } }
@@ -288,16 +316,15 @@ class BenchmarkComparator
         [best['name'].sub(/^[A-Z]+:\s*/, ''), @results[i][:name]]
       end.compact
 
-      puts "\n#{category_name}:"
-
       unique_techniques = winners.map(&:first).uniq
       if unique_techniques.size == 1
-        puts "  Use: #{unique_techniques.first}"
+        out "| #{category_name} | `#{unique_techniques.first}` |"
       else
-        winners.each { |tech, ruby| puts "  #{ruby}: #{tech}" }
+        rec = winners.map { |tech, ruby| "#{ruby}: `#{tech}`" }.join(", ")
+        out "| #{category_name} | #{rec} |"
       end
     end
-    puts
+    out
   end
 
   def get_time(bench)
@@ -307,13 +334,26 @@ class BenchmarkComparator
   def get_gc_count(bench)
     bench.dig('gc', 'collections') || 0
   end
+
+  def get_heap_mb(bench)
+    # Try different heap metrics depending on Ruby engine
+    # JRuby uses heap_used_bytes_after, MRI uses rss_mb_after
+    if bench.dig('gc', 'heap_used_bytes_after')
+      bytes = bench.dig('gc', 'heap_used_bytes_after')
+      mb = bytes / 1024.0 / 1024.0
+    elsif bench.dig('memory', 'rss_mb_after')
+      mb = bench.dig('memory', 'rss_mb_after')
+    else
+      mb = 0
+    end
+    mb > 1 ? mb.round(1) : 0
+  end
 end
 
 if __FILE__ == $0
   if ARGV.size >= 2
     files = ARGV
   else
-    # Auto-find latest results for each Ruby version
     mri = Dir['results/bench_mri_*.json'].sort.last
     jruby10 = Dir['results/bench_jruby10_*.json'].sort.last
     jruby17 = Dir['results/bench_jruby1_*.json'].sort.last
@@ -330,8 +370,16 @@ if __FILE__ == $0
   end
 
   puts "Comparing: #{files.join(', ')}"
-  puts
 
   comparator = BenchmarkComparator.new(files)
-  comparator.compare
+
+  # Generate timestamped filename
+  timestamp = Time.now.strftime("%Y%m%d_%H%M%S")
+  output_file = "results/comparison_#{timestamp}.md"
+
+  comparator.save(output_file)
+
+  # Also print to stdout
+  puts
+  puts File.read(output_file)
 end
