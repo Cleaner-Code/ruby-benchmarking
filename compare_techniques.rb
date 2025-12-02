@@ -21,7 +21,8 @@ class BenchmarkComparator
     'NIL:' => 'Nil Handling',
     'DUP:' => 'Object Duplication',
     'CALL:' => 'Method Invocation',
-    'BLOCK:' => 'Block/Yield'
+    'BLOCK:' => 'Block/Yield',
+    'EVAL:' => 'Eval'
   }
 
   def initialize(files)

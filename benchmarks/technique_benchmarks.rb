@@ -31,6 +31,7 @@ module TechniqueBenchmarks
     results.concat(object_duplication_techniques(iterations))
     results.concat(method_invocation_techniques(iterations))
     results.concat(block_yield_techniques(iterations))
+    results.concat(eval_techniques(iterations))
 
     results
   end
@@ -638,6 +639,43 @@ module TechniqueBenchmarks
       },
       BenchmarkRunner.run(:name => "BLOCK: select { }", :iterations => iterations) {
         arr.select { |x| x > 50 }
+      }
+    ]
+  end
+
+  # === EVAL PERFORMANCE ===
+  def eval_techniques(iterations)
+    puts "\n--- Eval: 50k iterations ---"
+
+    n = 50_000
+    obj = Object.new
+    klass = Class.new
+    b = binding
+
+    [
+      BenchmarkRunner.run(:name => "EVAL: eval simple", :iterations => iterations) {
+        n.times { eval("1 + 1") }
+      },
+      BenchmarkRunner.run(:name => "EVAL: eval vars", :iterations => iterations) {
+        n.times { eval("x = 5; x * 2") }
+      },
+      BenchmarkRunner.run(:name => "EVAL: instance_eval str", :iterations => iterations) {
+        n.times { obj.instance_eval("1 + 1") }
+      },
+      BenchmarkRunner.run(:name => "EVAL: instance_eval blk", :iterations => iterations) {
+        n.times { obj.instance_eval { 1 + 1 } }
+      },
+      BenchmarkRunner.run(:name => "EVAL: class_eval str", :iterations => iterations) {
+        n.times { klass.class_eval("1 + 1") }
+      },
+      BenchmarkRunner.run(:name => "EVAL: class_eval blk", :iterations => iterations) {
+        n.times { klass.class_eval { 1 + 1 } }
+      },
+      BenchmarkRunner.run(:name => "EVAL: binding.eval", :iterations => iterations) {
+        n.times { b.eval("1 + 1") }
+      },
+      BenchmarkRunner.run(:name => "EVAL: direct (baseline)", :iterations => iterations) {
+        n.times { 1 + 1 }
       }
     ]
   end
