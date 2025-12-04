@@ -595,7 +595,7 @@ module TechniqueBenchmarks
 
   # === BLOCK/YIELD PERFORMANCE ===
   def block_yield_techniques(iterations)
-    puts "\n--- Block/Yield: 1M iterations ---"
+    puts "\n--- Block/Yield: 2M iterations ---"
 
     # Helper methods for yield testing
     def self.with_yield(n)
@@ -622,7 +622,7 @@ module TechniqueBenchmarks
 
     my_proc = Proc.new { 1 + 1 }
     my_lambda = lambda { 1 + 1 }
-    n = 1_000_000
+    n = 2_000_000  # 2M iterations for stable measurements
     arr = Array.new(500_000) { rand(100) }
 
     [

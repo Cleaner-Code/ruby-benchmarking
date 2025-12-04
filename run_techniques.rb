@@ -32,7 +32,10 @@ class TechniqueSuite
     'XFORM:' => 'Transform',
     'CONV:' => 'Number Conversion',
     'NIL:' => 'Nil Handling',
-    'DUP:' => 'Object Duplication'
+    'DUP:' => 'Object Duplication',
+    'CALL:' => 'Method Invocation',
+    'BLOCK:' => 'Block/Yield',
+    'EVAL:' => 'Eval Performance'
   }
 
   def initialize

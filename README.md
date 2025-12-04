@@ -19,7 +19,7 @@ bench/
 │   ├── benchmark_runner.rb   # Core benchmarking library
 │   └── ruby19_compat.rb      # Ruby 1.9.3 compatibility polyfills
 ├── benchmarks/
-│   ├── technique_benchmarks.rb  # Compare different approaches (14 categories)
+│   ├── technique_benchmarks.rb  # Compare different approaches (17 categories)
 │   ├── string_benchmarks.rb     # String operations
 │   ├── array_benchmarks.rb      # Array operations
 │   ├── hash_benchmarks.rb       # Hash operations
@@ -67,6 +67,9 @@ Compares different coding approaches that produce the **same result**:
 | Number Conversion | `map(&:to_i)`, `map { to_i }`, `Integer()`, `Integer(s,10)` |
 | Nil Handling | `\|\|`, `nil?` ternary, `to_i`, `compact`, `nil? ? 0 : itself` |
 | Object Duplication | `dup`, `clone`, `Hash[]`, `merge({})`, `to_h` |
+| Method Invocation | `direct`, `send`, `public_send`, `method.call`, `__send__` |
+| Block/Yield | `yield`, `block.call`, `proc.call`, `lambda.call`, unused closure overhead |
+| Eval | `eval`, `instance_eval`, `class_eval`, `binding.eval`, string vs block |
 
 ## Operation Benchmarks
 
@@ -108,3 +111,37 @@ Benchmarks use native implementations only - no polyfills. Features unavailable 
 | `Enumerable#filter_map` | 2.7+ | Yes |
 
 This ensures benchmarks reflect true native performance of each Ruby version.
+
+## Key Findings
+
+### Closure Creation Overhead
+
+When a block is passed to a method but never called, there is still overhead from closure creation:
+
+| Pattern | MRI | JRuby 10 | JRuby 1.7 |
+|---------|----:|--------:|----------:|
+| No block (baseline) | - | - | - |
+| `def foo; yield; end` (never yields) | +26% | +350% | +82% |
+| `def foo(&block); end` (never calls) | +68% | +343% | +266% |
+
+**Takeaways:**
+
+- **MRI**: `yield` syntax is cheaper than `&block` for unused closures
+- **JRuby 10**: JIT optimizes both patterns equally well
+- **JRuby 1.7**: `&block` has significantly higher overhead
+
+### Universal Best Practices
+
+These techniques are fastest across all Ruby implementations:
+
+| Category | Best Technique |
+|----------|----------------|
+| String Building | `Array#join` |
+| Array Building | `Range#to_a` |
+| String Search | `start_with?` |
+| Number Conversion | `map(&:to_i)` |
+| Object Duplication | `to_h` |
+| Method Invocation | direct call |
+| Block/Yield | `each { }` |
+
+See `results/comparison_*.md` for detailed comparisons.
