@@ -130,9 +130,11 @@ When a block is passed to a method but never called, there is still overhead fro
 - **JRuby 10**: JIT optimizes both patterns equally well
 - **JRuby 1.7**: `&block` has significantly higher overhead
 
-### JRuby 10 Hash#[]= Regression
+### JRuby 10 Large Hash Regression
 
-JRuby 10 shows a significant performance regression when growing large hashes with integer keys:
+JRuby 10 shows significant performance regressions with large hashes. See [jruby/jruby#9113](https://github.com/jruby/jruby/issues/9113).
+
+**Hash#[]= (write) regression:**
 
 | Benchmark | MRI | JRuby 10 | JRuby 1.7 | Regression |
 |-----------|----:|--------:|----------:|----------:|
@@ -141,11 +143,21 @@ JRuby 10 shows a significant performance regression when growing large hashes wi
 | 10k keys x 50 | 0.03s | 0.06s | 0.03s | none |
 | Java HashMap | - | 0.03s | 0.05s | - |
 
+**Hash#keys regression (scales with size):**
+
+| Entries | JRuby 1.7 | JRuby 10 | Regression |
+|--------:|----------:|---------:|----------:|
+| 1k | 0.08ms | 0.09ms | ~1x |
+| 10k | 0.12ms | 0.14ms | ~1.1x |
+| 100k | 0.55ms | 1.24ms | **2.3x** |
+| 500k | 5.0ms | 31.5ms | **6.3x** |
+
 **Key observations:**
 
 - Java HashMap is fast on JRuby 10, suggesting the issue is in RubyHash implementation
 - Small hashes (10k keys) are unaffected
-- Integer keys show the largest regression
+- Regression scales with hash size - worse for larger hashes
+- Both write (`[]=`) and read (`keys`, `values`) operations affected
 
 Reproducer: run `benchmarks/hash_benchmarks.rb` and compare `Hash#[]= 500k int keys` vs `Java HashMap 500k int keys` on JRuby.
 

@@ -27,6 +27,7 @@ module HashBenchmarks
     end
     results << hash_each(:iterations => iterations)
     results << hash_keys_values(:iterations => iterations)
+    results << hash_keys_large(:iterations => iterations)
     results << hash_merge(:iterations => iterations)
     results << hash_map_keys(:iterations => iterations)
     results << hash_map_values(:iterations => iterations)
@@ -131,6 +132,16 @@ module HashBenchmarks
         hash.keys
         hash.values
       end
+    end
+  end
+
+  # Large hash keys - isolates JRuby 10 regression (scales with hash size)
+  def hash_keys_large(options = {})
+    iterations = options[:iterations] || 10
+    hash = Hash[(1..500_000).map { |i| [i, i] }]
+
+    BenchmarkRunner.run(:name => "Hash#keys 500k", :iterations => iterations) do
+      100.times { hash.keys }
     end
   end
 
