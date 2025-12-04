@@ -74,11 +74,12 @@ Compares different coding approaches that produce the **same result**:
 
 ## Operation Benchmarks
 
-Tests different operations (not comparing approaches):
+Tests different operations (not comparing approaches). Hash operations use **string keys** for fair comparison across implementations.
 
 - **String**: split, gsub, scan, match, encoding, frozen
 - **Array**: creation, push, unshift, each, map, select, reduce, sort, flatten, compact, uniq, include?, index
-- **Hash**: creation, read, write (int/string keys, small/large), each, keys/values, merge, map keys/values, select, nested access
+- **Hash**: creation, read, write, each, keys/values, merge, map keys/values, select, nested access
+- **Hash (regression tests)**: 500k int keys, 10k int keys x50, Hash#keys 500k, Java HashMap (JRuby only)
 - **Parsing**: JSON, CSV, Integer, Float, Date, Regex, tokenization
 
 ## Output
@@ -173,6 +174,7 @@ These techniques are fastest across all Ruby implementations:
 |----------|----------------|
 | String Building | `Array#join` |
 | Array Building | `Range#to_a` |
+| Array Sorting | `sort!` |
 | String Search | `start_with?` |
 | Number Conversion | `map(&:to_i)` |
 | Object Duplication | `to_h` |
