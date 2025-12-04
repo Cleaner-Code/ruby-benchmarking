@@ -143,7 +143,9 @@ class BenchmarkComparator
       fastest_idx = valid_times.min_by { |t, _| t }[1] if valid_times.any?
 
       short_name = name.sub(/^[A-Z]+:\s*/, '')
-      row = "| #{short_name} |"
+      # Escape pipe characters in technique names to avoid breaking markdown tables
+      escaped_name = short_name.gsub('|', '\\|')
+      row = "| #{escaped_name} |"
 
       benches.each_with_index do |bench, i|
         if bench.nil?
@@ -179,14 +181,16 @@ class BenchmarkComparator
     winner_techniques = []
     winners.each_with_index do |w, i|
       next unless w
-      winner_techniques << "**#{@results[i][:name]}**: #{w.sub(/^[A-Z]+:\s*/, '')}"
+      technique_name = w.sub(/^[A-Z]+:\s*/, '').gsub('|', '\\|')
+      winner_techniques << "**#{@results[i][:name]}**: #{technique_name}"
       @summary[@results[i][:name]][:best_technique] += 1
     end
 
     unique_winners = winners.compact.uniq
     out
     if unique_winners.size == 1
-      out "> **All agree**: #{unique_winners.first.sub(/^[A-Z]+:\s*/, '')}"
+      technique_name = unique_winners.first.sub(/^[A-Z]+:\s*/, '').gsub('|', '\\|')
+      out "> **All agree**: #{technique_name}"
     else
       out "> #{winner_techniques.join(' | ')}"
     end
@@ -316,7 +320,8 @@ class BenchmarkComparator
       winners = results_per_ruby.each_with_index.map do |results, i|
         next nil if results.empty?
         best = results.min_by { |b| get_time(b) }
-        [best['name'].sub(/^[A-Z]+:\s*/, ''), @results[i][:name]]
+        technique_name = best['name'].sub(/^[A-Z]+:\s*/, '').gsub('|', '\\|')
+        [technique_name, @results[i][:name]]
       end.compact
 
       unique_techniques = winners.map(&:first).uniq
