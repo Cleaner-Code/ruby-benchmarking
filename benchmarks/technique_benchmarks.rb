@@ -33,6 +33,7 @@ module TechniqueBenchmarks
     results.concat(method_invocation_techniques(iterations))
     results.concat(block_yield_techniques(iterations))
     results.concat(eval_techniques(iterations))
+    results.concat(caller_techniques(iterations))
 
     results
   end
@@ -735,5 +736,48 @@ module TechniqueBenchmarks
         n.times { 1 + 1 }
       }
     ]
+  end
+
+  # === CALLER PERFORMANCE ===
+  def caller_techniques(iterations)
+    puts "\n--- Caller: 100k iterations ---"
+
+    n = 100_000
+
+    results = [
+      BenchmarkRunner.run(:name => "CALLER: caller()", :iterations => iterations) {
+        n.times { caller }
+      },
+      BenchmarkRunner.run(:name => "CALLER: caller(0)", :iterations => iterations) {
+        n.times { caller(0) }
+      }
+    ]
+
+    # caller(start, length) - Ruby 2.0+
+    if RUBY_VERSION >= '2.0'
+      results << BenchmarkRunner.run(:name => "CALLER: caller(0, 1)", :iterations => iterations) {
+        n.times { caller(0, 1) }
+      }
+      results << BenchmarkRunner.run(:name => "CALLER: caller(0, 5)", :iterations => iterations) {
+        n.times { caller(0, 5) }
+      }
+    else
+      puts "  [skipped] CALLER: caller(0, 1) (requires Ruby 2.0+)"
+      puts "  [skipped] CALLER: caller(0, 5) (requires Ruby 2.0+)"
+    end
+
+    # caller_locations - Ruby 2.0+
+    if Kernel.respond_to?(:caller_locations)
+      results << BenchmarkRunner.run(:name => "CALLER: caller_locations(0, 1)", :iterations => iterations) {
+        n.times { caller_locations(0, 1) }
+      }
+      results << BenchmarkRunner.run(:name => "CALLER: caller_locations(0, 5)", :iterations => iterations) {
+        n.times { caller_locations(0, 5) }
+      }
+    else
+      puts "  [skipped] CALLER: caller_locations (requires Ruby 2.0+)"
+    end
+
+    results
   end
 end

@@ -71,6 +71,7 @@ Compares different coding approaches that produce the **same result**:
 | Method Invocation | `direct`, `send`, `public_send`, `method.call`, `__send__` |
 | Block/Yield | `yield`, `block.call`, `proc.call`, `lambda.call`, unused closure overhead |
 | Eval | `eval`, `instance_eval`, `class_eval`, `binding.eval`, string vs block |
+| Caller | `caller()`, `caller(0)`, `caller(0, 1)`, `caller_locations` |
 
 ## Operation Benchmarks
 
