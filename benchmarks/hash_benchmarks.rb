@@ -54,25 +54,27 @@ module HashBenchmarks
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Hash creation (from array)", :iterations => iterations) do
       10_000.times do
-        Hash[(1..100).map { |i| [i, i * 2] }]
+        Hash[(1..100).map { |i| ["key#{i}", i * 2] }]
       end
     end
   end
 
   def hash_access(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..10_000).map { |i| [i, "value_#{i}"] }]
+    keys = (1..10_000).map { |i| "key#{i}" }
+    hash = Hash[keys.map { |k| [k, "value"] }]
 
     BenchmarkRunner.run(:name => "Hash#[] (read)", :iterations => iterations) do
-      1_000_000.times { hash[rand(10_000) + 1] }
+      1_000_000.times { hash[keys[rand(10_000)]] }
     end
   end
 
   def hash_write(options = {})
     iterations = options[:iterations] || 10
+    keys = (0...500_000).map { |i| "key#{i}" }
     BenchmarkRunner.run(:name => "Hash#[]= (write)", :iterations => iterations) do
       hash = {}
-      500_000.times { |i| hash[i] = i * 2 }
+      keys.each_with_index { |k, i| hash[k] = i * 2 }
     end
   end
 
@@ -137,7 +139,7 @@ module HashBenchmarks
 
   def hash_each(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..50_000).map { |i| [i, i * 2] }]
+    hash = Hash[(1..50_000).map { |i| ["key#{i}", i * 2] }]
 
     BenchmarkRunner.run(:name => "Hash#each", :iterations => iterations) do
       sum = 0
@@ -147,7 +149,7 @@ module HashBenchmarks
 
   def hash_keys_values(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..100_000).map { |i| [i, i * 2] }]
+    hash = Hash[(1..100_000).map { |i| ["key#{i}", i * 2] }]
 
     BenchmarkRunner.run(:name => "Hash#keys and Hash#values", :iterations => iterations) do
       100.times do
@@ -169,8 +171,8 @@ module HashBenchmarks
 
   def hash_merge(options = {})
     iterations = options[:iterations] || 10
-    h1 = Hash[(1..5_000).map { |i| [i, i] }]
-    h2 = Hash[(5_001..10_000).map { |i| [i, i] }]
+    h1 = Hash[(1..5_000).map { |i| ["key#{i}", i] }]
+    h2 = Hash[(5_001..10_000).map { |i| ["key#{i}", i] }]
 
     BenchmarkRunner.run(:name => "Hash#merge", :iterations => iterations) do
       1000.times { h1.merge(h2) }
@@ -180,12 +182,12 @@ module HashBenchmarks
   # Ruby 1.9 compatible version of transform_keys
   def hash_map_keys(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..10_000).map { |i| [i, i * 2] }]
+    hash = Hash[(1..10_000).map { |i| ["key#{i}", i * 2] }]
 
     BenchmarkRunner.run(:name => "Hash map keys", :iterations => iterations) do
       100.times do
         result = {}
-        hash.each { |k, v| result[k.to_s] = v }
+        hash.each { |k, v| result[k.upcase] = v }
         result
       end
     end
@@ -194,7 +196,7 @@ module HashBenchmarks
   # Ruby 1.9 compatible version of transform_values
   def hash_map_values(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..10_000).map { |i| [i, i] }]
+    hash = Hash[(1..10_000).map { |i| ["key#{i}", i] }]
 
     BenchmarkRunner.run(:name => "Hash map values", :iterations => iterations) do
       100.times do
@@ -207,7 +209,7 @@ module HashBenchmarks
 
   def hash_select(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..50_000).map { |i| [i, i] }]
+    hash = Hash[(1..50_000).map { |i| ["key#{i}", i] }]
 
     BenchmarkRunner.run(:name => "Hash#select", :iterations => iterations) do
       50.times { hash.select { |k, v| v.even? } }
@@ -216,26 +218,26 @@ module HashBenchmarks
 
   def hash_nested_access(options = {})
     iterations = options[:iterations] || 10
+    outer_keys = (0...1_000).map { |i| "outer#{i}" }
+    inner_keys = (0...10).map { |j| "inner#{j}" }
     nested = {}
-    1_000.times do |i|
-      nested[i] = {}
-      10.times do |j|
-        nested[i][j] = { :value => i * j }
+    outer_keys.each_with_index do |ok, i|
+      nested[ok] = {}
+      inner_keys.each_with_index do |ik, j|
+        nested[ok][ik] = { :value => i * j }
       end
     end
 
     BenchmarkRunner.run(:name => "Nested hash access", :iterations => iterations) do
       1_000_000.times do
-        i = rand(1000)
-        j = rand(10)
-        nested[i][j][:value]
+        nested[outer_keys[rand(1000)]][inner_keys[rand(10)]][:value]
       end
     end
   end
 
   def hash_to_a(options = {})
     iterations = options[:iterations] || 10
-    hash = Hash[(1..50_000).map { |i| [i, i * 2] }]
+    hash = Hash[(1..50_000).map { |i| ["key#{i}", i * 2] }]
 
     BenchmarkRunner.run(:name => "Hash#to_a", :iterations => iterations) do
       100.times { hash.to_a }
@@ -244,16 +246,17 @@ module HashBenchmarks
 
   def hash_deep_nesting(options = {})
     iterations = options[:iterations] || 10
+    child_keys = (0...10).map { |c| "child#{c}" }
     BenchmarkRunner.run(:name => "Deep hash tree creation", :iterations => iterations) do
       100.times do
         root = {}
         current = root
         50.times do |level|
           current[:children] = {}
-          10.times do |child|
-            current[:children][child] = { :level => level, :value => level * child }
+          child_keys.each_with_index do |ck, child|
+            current[:children][ck] = { :level => level, :value => level * child }
           end
-          current = current[:children][0]
+          current = current[:children][child_keys[0]]
         end
       end
     end
