@@ -18,6 +18,9 @@ module HashBenchmarks
     results << hash_creation_new(:iterations => iterations)
     results << hash_access(:iterations => iterations)
     results << hash_write(:iterations => iterations)
+    results << hash_write_int_large(:iterations => iterations)
+    results << hash_write_string_large(:iterations => iterations)
+    results << hash_write_int_small(:iterations => iterations)
     results << hash_each(:iterations => iterations)
     results << hash_keys_values(:iterations => iterations)
     results << hash_merge(:iterations => iterations)
@@ -63,6 +66,35 @@ module HashBenchmarks
     BenchmarkRunner.run(:name => "Hash#[]= (write)", :iterations => iterations) do
       hash = {}
       500_000.times { |i| hash[i] = i * 2 }
+    end
+  end
+
+  # Large hash with integer keys - isolates JRuby 10 regression
+  def hash_write_int_large(options = {})
+    iterations = options[:iterations] || 10
+    BenchmarkRunner.run(:name => "Hash#[]= 500k int keys", :iterations => iterations) do
+      hash = {}
+      500_000.times { |i| hash[i] = i }
+    end
+  end
+
+  # Large hash with string keys for comparison
+  def hash_write_string_large(options = {})
+    iterations = options[:iterations] || 10
+    BenchmarkRunner.run(:name => "Hash#[]= 500k string keys", :iterations => iterations) do
+      hash = {}
+      500_000.times { |i| hash["key#{i}"] = i }
+    end
+  end
+
+  # Small hash repeated - should be fast on all implementations
+  def hash_write_int_small(options = {})
+    iterations = options[:iterations] || 10
+    BenchmarkRunner.run(:name => "Hash#[]= 10k int keys x50", :iterations => iterations) do
+      50.times do
+        hash = {}
+        10_000.times { |i| hash[i] = i }
+      end
     end
   end
 
