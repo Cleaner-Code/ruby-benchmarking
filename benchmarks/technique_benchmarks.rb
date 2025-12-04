@@ -21,6 +21,7 @@ module TechniqueBenchmarks
     results.concat(array_sorting_techniques(iterations))
     results.concat(hash_building_techniques(iterations))
     results.concat(hash_access_techniques(iterations))
+    results.concat(hash_key_iteration_techniques(iterations))
     results.concat(conditional_techniques(iterations))
     results.concat(loop_techniques(iterations))
     results.concat(string_search_techniques(iterations))
@@ -272,6 +273,32 @@ module TechniqueBenchmarks
     end
 
     results
+  end
+
+  # === HASH KEY ITERATION ===
+  def hash_key_iteration_techniques(iterations)
+    puts "\n--- Hash Key Iteration: 20k entries x 1000 ---"
+    # Simulates real-world use case with frozen string keys
+    hash = {}
+    20_000.times { |i| hash["key#{i}".freeze] = i }
+
+    [
+      BenchmarkRunner.run(:name => "HKEY: keys.map", :iterations => iterations) {
+        1000.times { hash.keys.map { |k| k.upcase } }
+      },
+      BenchmarkRunner.run(:name => "HKEY: map { |k,_| }", :iterations => iterations) {
+        1000.times { hash.map { |k,_| k.upcase } }
+      },
+      BenchmarkRunner.run(:name => "HKEY: each_key.map", :iterations => iterations) {
+        1000.times { hash.each_key.map { |k| k.upcase } }
+      },
+      BenchmarkRunner.run(:name => "HKEY: keys.each", :iterations => iterations) {
+        1000.times { result = []; hash.keys.each { |k| result << k.upcase }; result }
+      },
+      BenchmarkRunner.run(:name => "HKEY: each { |k,_| }", :iterations => iterations) {
+        1000.times { result = []; hash.each { |k,_| result << k.upcase }; result }
+      }
+    ]
   end
 
   # === CONDITIONALS ===

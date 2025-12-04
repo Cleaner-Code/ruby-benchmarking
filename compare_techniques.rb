@@ -12,6 +12,7 @@ class BenchmarkComparator
     'SORT:' => 'Array Sorting',
     'HASH:' => 'Hash Building',
     'ACCESS:' => 'Hash Access',
+    'HKEY:' => 'Hash Key Iteration',
     'COND:' => 'Conditionals',
     'LOOP:' => 'Loops',
     'SEARCH:' => 'String Search',

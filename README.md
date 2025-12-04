@@ -19,7 +19,7 @@ bench/
 │   ├── benchmark_runner.rb   # Core benchmarking library
 │   └── ruby19_compat.rb      # Ruby 1.9.3 compatibility polyfills
 ├── benchmarks/
-│   ├── technique_benchmarks.rb  # Compare different approaches (17 categories)
+│   ├── technique_benchmarks.rb  # Compare different approaches (18 categories)
 │   ├── string_benchmarks.rb     # String operations
 │   ├── array_benchmarks.rb      # Array operations
 │   ├── hash_benchmarks.rb       # Hash operations
@@ -59,6 +59,7 @@ Compares different coding approaches that produce the **same result**:
 | Array Sorting | `sort`, `sort!`, `sort` block, `sort_by`, `sort_by identity` |
 | Hash Building | `[]=` loop, `zip.to_h`, `each_with_object`, `map.to_h`, `Hash[]` |
 | Hash Access | `[]`, `fetch`, `fetch` default, `\|\|` default, `dig` |
+| Hash Key Iteration | `keys.map`, `map { \|k,_\| }`, `each_key.map`, `keys.each`, `each { \|k,_\| }` |
 | Conditionals | ternary, `if/elsif`, `case/when`, hash lookup, array lookup |
 | Loops | `while`, `times`, `upto`, `range.each`, `step`, `loop+break` |
 | String Search | `include?`, `index`, `[]`, `match?`, `=~`, `start_with?` |
@@ -177,5 +178,6 @@ These techniques are fastest across all Ruby implementations:
 | Object Duplication | `to_h` |
 | Method Invocation | direct call |
 | Block/Yield | `each { }` |
+| Hash Key Iteration | `keys.map` |
 
 See `results/comparison_*.md` for detailed comparisons.
