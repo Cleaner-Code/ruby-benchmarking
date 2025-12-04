@@ -27,28 +27,28 @@ module StringBenchmarks
 
   def string_split(options = {})
     iterations = options[:iterations] || 10
-    sample_text = (["word"] * 10_000).join(" ") * 10
+    sample_text = (["word"] * 1_000).join(" ") * 5
 
     BenchmarkRunner.run(:name => "String#split", :iterations => iterations) do
-      1000.times { sample_text.split(" ") }
+      500.times { sample_text.split(" ") }
     end
   end
 
   def string_gsub(options = {})
     iterations = options[:iterations] || 10
-    sample_text = "The quick brown fox jumps over the lazy dog. " * 5_000
+    sample_text = "The quick brown fox jumps over the lazy dog. " * 500
 
     BenchmarkRunner.run(:name => "String#gsub (regex)", :iterations => iterations) do
-      1000.times { sample_text.gsub(/[aeiou]/, '*') }
+      500.times { sample_text.gsub(/[aeiou]/, '*') }
     end
   end
 
   def string_scan(options = {})
     iterations = options[:iterations] || 10
-    sample_text = "abc123def456ghi789" * 10_000
+    sample_text = "abc123def456ghi789" * 1_000
 
     BenchmarkRunner.run(:name => "String#scan (regex)", :iterations => iterations) do
-      1000.times { sample_text.scan(/\d+/) }
+      500.times { sample_text.scan(/\d+/) }
     end
   end
 
@@ -58,16 +58,16 @@ module StringBenchmarks
     regex = /(\w+)\s+(\w+)\s+(\w+)/
 
     BenchmarkRunner.run(:name => "String#match", :iterations => iterations) do
-      1_000_000.times { sample_text.match(regex) }
+      100_000.times { sample_text.match(regex) }
     end
   end
 
   def string_encoding(options = {})
     iterations = options[:iterations] || 10
-    sample_utf8 = "Hello World Test String " * 1000
+    sample_utf8 = "Hello World Test String " * 100
 
     BenchmarkRunner.run(:name => "String encoding conversion", :iterations => iterations) do
-      10_000.times do
+      2_000.times do
         s = sample_utf8.encode('UTF-16LE')
         s.encode('UTF-8')
       end
@@ -78,7 +78,7 @@ module StringBenchmarks
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Frozen string literals", :iterations => iterations) do
       result = []
-      500_000.times do
+      100_000.times do
         result << "frozen_string".freeze
       end
     end

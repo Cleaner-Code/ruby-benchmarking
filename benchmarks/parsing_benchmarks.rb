@@ -33,7 +33,7 @@ module ParsingBenchmarks
   def json_parse(options = {})
     iterations = options[:iterations] || 10
     data = {
-      :users => (1..100).map do |i|
+      :users => (1..50).map do |i|
         {
           :id => i,
           :name => "User #{i}",
@@ -46,14 +46,14 @@ module ParsingBenchmarks
     json_str = JSON.generate(data)
 
     BenchmarkRunner.run(:name => "JSON.parse", :iterations => iterations) do
-      10_000.times { JSON.parse(json_str) }
+      2_000.times { JSON.parse(json_str) }
     end
   end
 
   def json_generate(options = {})
     iterations = options[:iterations] || 10
     data = {
-      :users => (1..100).map do |i|
+      :users => (1..50).map do |i|
         {
           :id => i,
           :name => "User #{i}",
@@ -65,7 +65,7 @@ module ParsingBenchmarks
     }
 
     BenchmarkRunner.run(:name => "JSON.generate", :iterations => iterations) do
-      10_000.times { JSON.generate(data) }
+      2_000.times { JSON.generate(data) }
     end
   end
 
@@ -73,25 +73,25 @@ module ParsingBenchmarks
     iterations = options[:iterations] || 10
     csv_data = CSV.generate do |csv|
       csv << ["id", "name", "email", "age", "city"]
-      1000.times do |i|
+      500.times do |i|
         csv << [i, "Name #{i}", "email#{i}@example.com", 20 + (i % 50), "City #{i % 100}"]
       end
     end
 
     BenchmarkRunner.run(:name => "CSV.parse", :iterations => iterations) do
-      500.times { CSV.parse(csv_data) }
+      100.times { CSV.parse(csv_data) }
     end
   end
 
   def csv_generate(options = {})
     iterations = options[:iterations] || 10
     data = []
-    1000.times do |i|
+    500.times do |i|
       data << [i, "Name #{i}", "email#{i}@example.com", 20 + (i % 50), "City #{i % 100}"]
     end
 
     BenchmarkRunner.run(:name => "CSV.generate", :iterations => iterations) do
-      500.times do
+      100.times do
         CSV.generate do |csv|
           csv << ["id", "name", "email", "age", "city"]
           data.each { |row| csv << row }
@@ -103,20 +103,20 @@ module ParsingBenchmarks
   def integer_parse(options = {})
     iterations = options[:iterations] || 10
     strings = []
-    10_000.times { |i| strings << (i * 12345).to_s }
+    5_000.times { |i| strings << (i * 12345).to_s }
 
     BenchmarkRunner.run(:name => "Integer() parsing", :iterations => iterations) do
-      100.times { strings.each { |s| Integer(s) } }
+      20.times { strings.each { |s| Integer(s) } }
     end
   end
 
   def float_parse(options = {})
     iterations = options[:iterations] || 10
     strings = []
-    10_000.times { |i| strings << "#{i}.#{rand(1000)}" }
+    5_000.times { |i| strings << "#{i}.#{rand(1000)}" }
 
     BenchmarkRunner.run(:name => "Float() parsing", :iterations => iterations) do
-      100.times { strings.each { |s| Float(s) } }
+      20.times { strings.each { |s| Float(s) } }
     end
   end
 
@@ -124,23 +124,23 @@ module ParsingBenchmarks
     iterations = options[:iterations] || 10
     require 'date'
     dates = []
-    1000.times { |i| dates << "2024-#{(i % 12) + 1}-#{(i % 28) + 1}" }
+    500.times { |i| dates << "2024-#{(i % 12) + 1}-#{(i % 28) + 1}" }
 
     BenchmarkRunner.run(:name => "Date.parse", :iterations => iterations) do
-      100.times { dates.each { |d| Date.parse(d) } }
+      20.times { dates.each { |d| Date.parse(d) } }
     end
   end
 
   def regex_extraction(options = {})
     iterations = options[:iterations] || 10
     log_lines = []
-    10_000.times do |i|
+    2_000.times do |i|
       log_lines << "[2024-01-15 12:#{i % 60}:#{i % 60}] INFO: User #{i} performed action_#{i % 10}"
     end
     pattern = /\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (\w+): User (\d+) performed (\w+)/
 
     BenchmarkRunner.run(:name => "Regex extraction", :iterations => iterations) do
-      10.times do
+      5.times do
         log_lines.each do |line|
           m = line.match(pattern)
           if m
@@ -154,13 +154,13 @@ module ParsingBenchmarks
   def tokenization(options = {})
     iterations = options[:iterations] || 10
     code_samples = []
-    1000.times do |i|
+    200.times do |i|
       code_samples << "def method_#{i}(arg1, arg2)\n  result = arg1 + arg2\n  puts \"Result: \#{result}\"\n  return result\nend"
     end
     code_text = code_samples.join("\n\n")
 
     BenchmarkRunner.run(:name => "Tokenization (scan)", :iterations => iterations) do
-      100.times do
+      20.times do
         tokens = code_text.scan(/\b\w+\b|[^\s\w]/)
       end
     end
@@ -169,11 +169,11 @@ module ParsingBenchmarks
   def line_parsing(options = {})
     iterations = options[:iterations] || 10
     lines = []
-    100_000.times { |i| lines << "line #{i}: #{rand(1000)} data points" }
+    20_000.times { |i| lines << "line #{i}: #{rand(1000)} data points" }
     text = lines.join("\n")
 
     BenchmarkRunner.run(:name => "Line-by-line parsing", :iterations => iterations) do
-      10.times do
+      5.times do
         text.each_line do |line|
           parts = line.split(":")
           parts[0].strip

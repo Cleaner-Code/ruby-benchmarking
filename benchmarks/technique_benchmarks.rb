@@ -40,8 +40,8 @@ module TechniqueBenchmarks
 
   # === STRING BUILDING ===
   def string_building_techniques(iterations)
-    puts "\n--- String Building (10k concatenations) ---"
-    words = Array.new(10_000) { |i| "word#{i}" }
+    puts "\n--- String Building (2k concatenations) ---"
+    words = Array.new(2_000) { |i| "word#{i}" }
 
     [
       BenchmarkRunner.run(:name => "STR: + operator", :iterations => iterations) {
@@ -610,6 +610,16 @@ module TechniqueBenchmarks
       with_yield(n) { yield }
     end
 
+    # Block is accepted but never called - tests closure creation overhead
+    def self.noop_block(&block)
+      0
+    end
+
+    # Block is accepted via yield syntax but never yielded - tests closure creation overhead
+    def self.noop_yield
+      0
+    end
+
     my_proc = Proc.new { 1 + 1 }
     my_lambda = lambda { 1 + 1 }
     n = 1_000_000
@@ -639,6 +649,26 @@ module TechniqueBenchmarks
       },
       BenchmarkRunner.run(:name => "BLOCK: select { }", :iterations => iterations) {
         arr.select { |x| x > 50 }
+      },
+      # Closure creation overhead - block passed but never called
+      BenchmarkRunner.run(:name => "BLOCK: unused closure (&block)", :iterations => iterations) {
+        n.times do
+          x = 4711
+          noop_block { x * x }
+        end
+      },
+      BenchmarkRunner.run(:name => "BLOCK: unused closure (yield)", :iterations => iterations) {
+        n.times do
+          x = 4711
+          noop_yield { x * x }
+        end
+      },
+      # Baseline: no block at all
+      BenchmarkRunner.run(:name => "BLOCK: no block baseline", :iterations => iterations) {
+        n.times do
+          x = 4711
+          0
+        end
       }
     ]
   end

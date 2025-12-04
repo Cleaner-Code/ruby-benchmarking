@@ -65,46 +65,46 @@ module ArrayBenchmarks
 
   def array_each(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..100_000).to_a
+    arr = (1..50_000).to_a
 
     BenchmarkRunner.run(:name => "Array#each", :iterations => iterations) do
       sum = 0
-      100.times { arr.each { |x| sum += x } }
+      20.times { arr.each { |x| sum += x } }
     end
   end
 
   def array_map(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..100_000).to_a
+    arr = (1..50_000).to_a
 
     BenchmarkRunner.run(:name => "Array#map", :iterations => iterations) do
-      50.times { arr.map { |x| x * 2 } }
+      10.times { arr.map { |x| x * 2 } }
     end
   end
 
   def array_select(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..100_000).to_a
+    arr = (1..50_000).to_a
 
     BenchmarkRunner.run(:name => "Array#select", :iterations => iterations) do
-      50.times { arr.select { |x| x.even? } }
+      10.times { arr.select { |x| x.even? } }
     end
   end
 
   def array_reduce(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..100_000).to_a
+    arr = (1..50_000).to_a
 
     BenchmarkRunner.run(:name => "Array#reduce", :iterations => iterations) do
-      100.times { arr.reduce(0) { |sum, x| sum + x } }
+      20.times { arr.reduce(0) { |sum, x| sum + x } }
     end
   end
 
   def array_sort(options = {})
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Array#sort", :iterations => iterations) do
-      50.times do
-        arr = (1..50_000).to_a.shuffle
+      10.times do
+        arr = (1..20_000).to_a.shuffle
         arr.sort
       end
     end
@@ -113,8 +113,8 @@ module ArrayBenchmarks
   def array_sort_by(options = {})
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Array#sort_by", :iterations => iterations) do
-      50.times do
-        arr = (1..50_000).map { |i| { :value => i, :key => rand } }
+      10.times do
+        arr = (1..20_000).map { |i| { :value => i, :key => rand } }
         arr.sort_by { |h| h[:key] }
       end
     end
@@ -123,8 +123,8 @@ module ArrayBenchmarks
   def array_flatten(options = {})
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Array#flatten", :iterations => iterations) do
-      1000.times do
-        arr = Array.new(100) { Array.new(100) { |i| i } }
+      200.times do
+        arr = Array.new(50) { Array.new(50) { |i| i } }
         arr.flatten
       end
     end
@@ -133,8 +133,8 @@ module ArrayBenchmarks
   def array_compact(options = {})
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Array#compact", :iterations => iterations) do
-      1000.times do
-        arr = Array.new(10_000) { |i| i.even? ? i : nil }
+      200.times do
+        arr = Array.new(5_000) { |i| i.even? ? i : nil }
         arr.compact
       end
     end
@@ -143,8 +143,8 @@ module ArrayBenchmarks
   def array_uniq(options = {})
     iterations = options[:iterations] || 10
     BenchmarkRunner.run(:name => "Array#uniq", :iterations => iterations) do
-      100.times do
-        arr = Array.new(50_000) { rand(10_000) }
+      20.times do
+        arr = Array.new(20_000) { rand(5_000) }
         arr.uniq
       end
     end
@@ -152,19 +152,19 @@ module ArrayBenchmarks
 
   def array_include(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..10_000).to_a
+    arr = (1..5_000).to_a
 
     BenchmarkRunner.run(:name => "Array#include?", :iterations => iterations) do
-      100_000.times { arr.include?(rand(15_000)) }
+      20_000.times { arr.include?(rand(7_500)) }
     end
   end
 
   def array_index(options = {})
     iterations = options[:iterations] || 10
-    arr = (1..10_000).to_a
+    arr = (1..5_000).to_a
 
     BenchmarkRunner.run(:name => "Array#index", :iterations => iterations) do
-      100_000.times { arr.index(rand(15_000)) }
+      20_000.times { arr.index(rand(7_500)) }
     end
   end
 end
