@@ -77,7 +77,7 @@ Tests different operations (not comparing approaches):
 
 - **String**: split, gsub, scan, match, encoding, frozen
 - **Array**: creation, push, unshift, each, map, select, reduce, sort, flatten, compact, uniq, include?, index
-- **Hash**: creation, read, write, each, keys/values, merge, map keys/values, select, nested access
+- **Hash**: creation, read, write (int/string keys, small/large), each, keys/values, merge, map keys/values, select, nested access
 - **Parsing**: JSON, CSV, Integer, Float, Date, Regex, tokenization
 
 ## Output
@@ -129,6 +129,25 @@ When a block is passed to a method but never called, there is still overhead fro
 - **MRI**: `yield` syntax is cheaper than `&block` for unused closures
 - **JRuby 10**: JIT optimizes both patterns equally well
 - **JRuby 1.7**: `&block` has significantly higher overhead
+
+### JRuby 10 Hash#[]= Regression
+
+JRuby 10 shows a significant performance regression when growing large hashes with integer keys:
+
+| Benchmark | MRI | JRuby 10 | JRuby 1.7 | Regression |
+|-----------|----:|--------:|----------:|----------:|
+| 500k int keys | 0.04s | 0.31s | 0.03s | **~8-10x** |
+| 500k string keys | 0.20s | 0.90s | 0.58s | ~1.6x |
+| 10k keys x 50 | 0.03s | 0.06s | 0.03s | none |
+| Java HashMap | - | 0.03s | 0.05s | - |
+
+**Key observations:**
+
+- Java HashMap is fast on JRuby 10, suggesting the issue is in RubyHash implementation
+- Small hashes (10k keys) are unaffected
+- Integer keys show the largest regression
+
+Reproducer: run `benchmarks/hash_benchmarks.rb` and compare `Hash#[]= 500k int keys` vs `Java HashMap 500k int keys` on JRuby.
 
 ### Universal Best Practices
 

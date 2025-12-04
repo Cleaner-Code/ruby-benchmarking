@@ -21,6 +21,10 @@ module HashBenchmarks
     results << hash_write_int_large(:iterations => iterations)
     results << hash_write_string_large(:iterations => iterations)
     results << hash_write_int_small(:iterations => iterations)
+    # Java HashMap comparison - only on JRuby
+    if RUBY_ENGINE == 'jruby'
+      results << hash_java_hashmap(:iterations => iterations)
+    end
     results << hash_each(:iterations => iterations)
     results << hash_keys_values(:iterations => iterations)
     results << hash_merge(:iterations => iterations)
@@ -95,6 +99,16 @@ module HashBenchmarks
         hash = {}
         10_000.times { |i| hash[i] = i }
       end
+    end
+  end
+
+  # Java HashMap comparison - shows JRuby's underlying Java is fast
+  # This benchmark only runs on JRuby
+  def hash_java_hashmap(options = {})
+    iterations = options[:iterations] || 10
+    BenchmarkRunner.run(:name => "Java HashMap 500k int keys", :iterations => iterations) do
+      map = java.util.HashMap.new
+      500_000.times { |i| map.put(i, i) }
     end
   end
 
