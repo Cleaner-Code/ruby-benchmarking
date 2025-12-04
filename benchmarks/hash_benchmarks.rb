@@ -20,6 +20,8 @@ module HashBenchmarks
     results << hash_write(:iterations => iterations)
     results << hash_write_int_large(:iterations => iterations)
     results << hash_write_string_large(:iterations => iterations)
+    results << hash_write_frozen_string_large(:iterations => iterations)
+    results << hash_write_symbol_large(:iterations => iterations)
     results << hash_write_int_small(:iterations => iterations)
     # Java HashMap comparison - only on JRuby
     if RUBY_ENGINE == 'jruby'
@@ -89,6 +91,26 @@ module HashBenchmarks
     BenchmarkRunner.run(:name => "Hash#[]= 500k string keys", :iterations => iterations) do
       hash = {}
       500_000.times { |i| hash["key#{i}"] = i }
+    end
+  end
+
+  # Large hash with frozen string keys - common real-world pattern
+  def hash_write_frozen_string_large(options = {})
+    iterations = options[:iterations] || 10
+    # Pre-create frozen keys (simulates real-world usage with constants/frozen literals)
+    keys = (0...500_000).map { |i| "key#{i}".freeze }
+    BenchmarkRunner.run(:name => "Hash#[]= 500k frozen string keys", :iterations => iterations) do
+      hash = {}
+      keys.each_with_index { |k, i| hash[k] = i }
+    end
+  end
+
+  # Large hash with symbol keys
+  def hash_write_symbol_large(options = {})
+    iterations = options[:iterations] || 10
+    BenchmarkRunner.run(:name => "Hash#[]= 500k symbol keys", :iterations => iterations) do
+      hash = {}
+      500_000.times { |i| hash[:"key#{i}"] = i }
     end
   end
 

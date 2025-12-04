@@ -134,30 +134,33 @@ When a block is passed to a method but never called, there is still overhead fro
 
 JRuby 10 shows significant performance regressions with large hashes. See [jruby/jruby#9113](https://github.com/jruby/jruby/issues/9113).
 
-**Hash#[]= (write) regression:**
+**Hash#[]= (write) regression by key type:**
 
-| Benchmark | MRI | JRuby 10 | JRuby 1.7 | Regression |
-|-----------|----:|--------:|----------:|----------:|
-| 500k int keys | 0.04s | 0.31s | 0.03s | **~8-10x** |
-| 500k string keys | 0.20s | 0.90s | 0.58s | ~1.6x |
-| 10k keys x 50 | 0.03s | 0.06s | 0.03s | none |
-| Java HashMap | - | 0.03s | 0.05s | - |
+| Key Type | MRI | JRuby 1.7 | JRuby 10 | JRuby 10 vs 1.7 |
+|----------|----:|----------:|---------:|----------------:|
+| integer | 0.04s | 0.03s | 0.27s | **~8-10x slower** |
+| dynamic string | 0.20s | 0.58s | 0.71s | ~1.2x slower |
+| symbol | 0.53s | 0.83s | 0.89s | ~1.1x slower |
+| **frozen string** | 0.06s | 0.42s | 0.34s | **1.25x faster** ✓ |
+| 10k int x50 | 0.03s | 0.03s | 0.05s | none |
+| Java HashMap | - | 0.05s | 0.02s | - |
 
-**Hash#keys regression (scales with size):**
+**Hash#keys regression (scales with size, integer keys):**
 
-| Entries | JRuby 1.7 | JRuby 10 | Regression |
-|--------:|----------:|---------:|----------:|
-| 1k | 0.08ms | 0.09ms | ~1x |
-| 10k | 0.12ms | 0.14ms | ~1.1x |
-| 100k | 0.55ms | 1.24ms | **2.3x** |
-| 500k | 5.0ms | 31.5ms | **6.3x** |
+| Entries | MRI | JRuby 1.7 | JRuby 10 | JRuby 10 vs 1.7 |
+|--------:|----:|----------:|---------:|----------------:|
+| 1k | 0.01ms | 0.08ms | 0.09ms | ~1x |
+| 10k | 0.01ms | 0.12ms | 0.14ms | ~1.1x |
+| 100k | 0.13ms | 0.55ms | 1.24ms | **2.3x** |
+| 500k | 0.34ms | 5.0ms | 31.5ms | **6.3x** |
 
 **Key observations:**
 
-- Java HashMap is fast on JRuby 10, suggesting the issue is in RubyHash implementation
+- **Frozen string keys are NOT affected** - actually 1.25x faster on JRuby 10
+- Integer keys show the largest regression (~8-10x)
+- Java HashMap is fast on JRuby 10, confirming the issue is in RubyHash implementation
 - Small hashes (10k keys) are unaffected
 - Regression scales with hash size - worse for larger hashes
-- Both write (`[]=`) and read (`keys`, `values`) operations affected
 
 Reproducer: run `benchmarks/hash_benchmarks.rb` and compare `Hash#[]= 500k int keys` vs `Java HashMap 500k int keys` on JRuby.
 
