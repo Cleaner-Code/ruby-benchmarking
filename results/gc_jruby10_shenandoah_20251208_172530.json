@@ -1,0 +1,236 @@
+{
+  "metadata": {
+    "ruby_engine": "jruby",
+    "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+    "gc": "shenandoah",
+    "platform": "java",
+    "timestamp": "20251208_172530",
+    "iterations": 3
+  },
+  "benchmarks": [
+    {
+      "name": "GC: Hash#keys 500k",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.016172055666781187,
+        "min": 0.015462250001291977,
+        "max": 0.01751249999870197,
+        "std_dev": 9.483881444039194E-4
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 225052832,
+        "heap_committed_bytes": 562036736
+      },
+      "memory": {
+        "used_mb_before": 157.40618896484375,
+        "used_mb_after": 214.62710571289062,
+        "used_mb_delta": 57.220916748046875,
+        "total_mb": 536.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Hash#keys 100k",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.014897416665917262,
+        "min": 0.014590499999030726,
+        "max": 0.015334959000028903,
+        "std_dev": 3.1764980691038094E-4
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 355972832,
+        "heap_committed_bytes": 562036736
+      },
+      "memory": {
+        "used_mb_before": 282.2593994140625,
+        "used_mb_after": 339.4821472167969,
+        "used_mb_delta": 57.222747802734375,
+        "total_mb": 536.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Hash#keys 1M",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.015177833333533878,
+        "min": 0.014909500001522247,
+        "max": 0.015461499999219086,
+        "std_dev": 2.256137299390067E-4
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 582969088,
+        "heap_committed_bytes": 603979776
+      },
+      "memory": {
+        "used_mb_before": 498.74195861816406,
+        "used_mb_after": 555.962646484375,
+        "used_mb_delta": 57.22068786621094,
+        "total_mb": 576.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Hash#[]= 500k int",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.1279155420003614,
+        "min": 0.12543066700163763,
+        "max": 0.13058641699899454,
+        "std_dev": 0.0021089312473045276
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 901706288,
+        "heap_committed_bytes": 922746880
+      },
+      "memory": {
+        "used_mb_before": 707.9875793457031,
+        "used_mb_after": 859.9341278076172,
+        "used_mb_delta": 151.94654846191406,
+        "total_mb": 880.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Hash#[]= 100k int x5",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.0644756246668597,
+        "min": 0.06410154100012733,
+        "max": 0.0649302500023623,
+        "std_dev": 3.4307907048039646E-4
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 1224667696,
+        "heap_committed_bytes": 1245708288
+      },
+      "memory": {
+        "used_mb_before": 1015.9341278076172,
+        "used_mb_after": 1167.9341278076172,
+        "used_mb_delta": 152.0,
+        "total_mb": 1188.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Array#dup 500k",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 5.777640011122761E-4,
+        "min": 6.958001904422417E-6,
+        "max": 0.0017151249994640239,
+        "std_dev": 8.042375470714065E-4
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 1253915768,
+        "heap_committed_bytes": 1275068416
+      },
+      "memory": {
+        "used_mb_before": 1191.8272705078125,
+        "used_mb_after": 1195.827262878418,
+        "used_mb_delta": 3.9999923706054688,
+        "total_mb": 1216.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Array#map 500k",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.05113244433353733,
+        "min": 0.044892916001117555,
+        "max": 0.05470591699850047,
+        "std_dev": 0.004427537822924665
+      },
+      "gc": {
+        "collections": 4,
+        "gc_time_ms": 13,
+        "heap_used_bytes_after": 343902800,
+        "heap_committed_bytes": 2181038080
+      },
+      "memory": {
+        "used_mb_before": 1679.5066528320312,
+        "used_mb_after": 327.9712677001953,
+        "used_mb_delta": -1351.535385131836,
+        "total_mb": 2080.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    },
+    {
+      "name": "GC: Array#select 500k",
+      "ruby_version": "JRuby 10.0.2.0 (3.4.2) [21.0.9]",
+      "iterations": 3,
+      "time": {
+        "avg": 0.08729627833357274,
+        "min": 0.07124616700093611,
+        "max": 0.11174408399892855,
+        "std_dev": 0.017567228445288095
+      },
+      "gc": {
+        "collections": 0,
+        "gc_time_ms": 0,
+        "heap_used_bytes_after": 1186520816,
+        "heap_committed_bytes": 2181038080
+      },
+      "memory": {
+        "used_mb_before": 731.7700347900391,
+        "used_mb_after": 1131.554428100586,
+        "used_mb_delta": 399.7843933105469,
+        "total_mb": 2080.0,
+        "max_mb": 8192.0
+      },
+      "allocations": {
+        "eden_delta_bytes": 0,
+        "eden_peak_bytes": 0
+      }
+    }
+  ]
+}

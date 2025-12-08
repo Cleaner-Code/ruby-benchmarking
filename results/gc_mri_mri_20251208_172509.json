@@ -1,0 +1,260 @@
+{
+  "metadata": {
+    "ruby_engine": "ruby",
+    "ruby_version": "ruby 3.4.7p58",
+    "gc": "mri",
+    "platform": "arm64-darwin25",
+    "timestamp": "20251208_172509",
+    "iterations": 3
+  },
+  "benchmarks": [
+    {
+      "name": "GC: Hash#keys 500k",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.004677333333044468,
+        "min": 0.003705999999510823,
+        "max": 0.005984999999782303,
+        "std_dev": 0.0009603125649417599
+      },
+      "gc": {
+        "collections": 3,
+        "major_collections": 1,
+        "minor_collections": 2,
+        "objects_allocated": 94,
+        "objects_freed": 43
+      },
+      "memory": {
+        "rss_mb_before": 107.796875,
+        "rss_mb_after": 111.640625,
+        "rss_mb_delta": 3.84375,
+        "heap_live_slots_delta": 43
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 23,
+        "arrays_delta": 7,
+        "hashes_delta": 3,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Hash#keys 100k",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.004794000000401866,
+        "min": 0.0039680000008956995,
+        "max": 0.006105000000388827,
+        "std_dev": 0.000937411684660902
+      },
+      "gc": {
+        "collections": 3,
+        "major_collections": 1,
+        "minor_collections": 2,
+        "objects_allocated": 173,
+        "objects_freed": 143
+      },
+      "memory": {
+        "rss_mb_before": 174.96875,
+        "rss_mb_after": 174.96875,
+        "rss_mb_delta": 0.0,
+        "heap_live_slots_delta": 30
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 27,
+        "hashes_delta": 3,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Hash#keys 1M",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.0038349999995261896,
+        "min": 0.003165999998600455,
+        "max": 0.00467199999911827,
+        "std_dev": 0.0006261932609313912
+      },
+      "gc": {
+        "collections": 3,
+        "major_collections": 1,
+        "minor_collections": 2,
+        "objects_allocated": 38,
+        "objects_freed": 26
+      },
+      "memory": {
+        "rss_mb_before": 283.5,
+        "rss_mb_after": 283.5,
+        "rss_mb_delta": 0.0,
+        "heap_live_slots_delta": 12
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 8,
+        "hashes_delta": 3,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Hash#[]= 500k int",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.03245866666717726,
+        "min": 0.03099600000132341,
+        "max": 0.033343999999488005,
+        "std_dev": 0.0010418769381458442
+      },
+      "gc": {
+        "collections": 1,
+        "major_collections": 0,
+        "minor_collections": 1,
+        "objects_allocated": 26,
+        "objects_freed": 19
+      },
+      "memory": {
+        "rss_mb_before": 283.5,
+        "rss_mb_after": 283.515625,
+        "rss_mb_delta": 0.015625,
+        "heap_live_slots_delta": 7
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 1,
+        "hashes_delta": 5,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Hash#[]= 100k int x5",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.027266666665430723,
+        "min": 0.026772000001074048,
+        "max": 0.028010999998514308,
+        "std_dev": 0.0005357426823386606
+      },
+      "gc": {
+        "collections": 2,
+        "major_collections": 0,
+        "minor_collections": 2,
+        "objects_allocated": 38,
+        "objects_freed": 30
+      },
+      "memory": {
+        "rss_mb_before": 284.046875,
+        "rss_mb_after": 285.0625,
+        "rss_mb_delta": 1.015625,
+        "heap_live_slots_delta": 8
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 1,
+        "hashes_delta": 6,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Array#dup 500k",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 2.0000006770715117e-06,
+        "min": 1.0000003385357559e-06,
+        "max": 4.0000013541430235e-06,
+        "std_dev": 1.4142140411349524e-06
+      },
+      "gc": {
+        "collections": 0,
+        "major_collections": 0,
+        "minor_collections": 0,
+        "objects_allocated": 53,
+        "objects_freed": 0
+      },
+      "memory": {
+        "rss_mb_before": 284.578125,
+        "rss_mb_after": 284.578125,
+        "rss_mb_delta": 0.0,
+        "heap_live_slots_delta": 53
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 8,
+        "arrays_delta": 33,
+        "hashes_delta": 7,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Array#map 500k",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.058561333333879396,
+        "min": 0.057770999999775086,
+        "max": 0.0596399999994901,
+        "std_dev": 0.0007897857651611867
+      },
+      "gc": {
+        "collections": 1,
+        "major_collections": 0,
+        "minor_collections": 1,
+        "objects_allocated": 38,
+        "objects_freed": 25
+      },
+      "memory": {
+        "rss_mb_before": 284.578125,
+        "rss_mb_after": 284.578125,
+        "rss_mb_delta": 0.0,
+        "heap_live_slots_delta": 13
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 9,
+        "hashes_delta": 3,
+        "objects_delta": 0
+      }
+    },
+    {
+      "name": "GC: Array#select 500k",
+      "ruby_version": "ruby 3.4.7p58",
+      "iterations": 3,
+      "time": {
+        "avg": 0.12619833333277106,
+        "min": 0.1250900000013644,
+        "max": 0.12794299999950454,
+        "std_dev": 0.0012486238645226051
+      },
+      "gc": {
+        "collections": 3,
+        "major_collections": 0,
+        "minor_collections": 3,
+        "objects_allocated": 53,
+        "objects_freed": 43
+      },
+      "memory": {
+        "rss_mb_before": 284.578125,
+        "rss_mb_after": 284.578125,
+        "rss_mb_delta": 0.0,
+        "heap_live_slots_delta": 10
+      },
+      "allocations": {
+        "total_delta": 0,
+        "strings_delta": 0,
+        "arrays_delta": 6,
+        "hashes_delta": 3,
+        "objects_delta": 0
+      }
+    }
+  ]
+}

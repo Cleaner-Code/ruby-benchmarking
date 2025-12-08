@@ -15,16 +15,20 @@ bench/
 ├── run_techniques_all.sh     # Main entry: run MRI, JRuby 10, JRuby 1.7, compare
 ├── run_techniques.rb         # Benchmark runner
 ├── compare_techniques.rb     # MRI vs JRuby comparison
+├── run_gc_comparison.sh      # GC comparison: run with G1, Parallel, ZGC, Shenandoah
+├── run_gc_benchmarks.rb      # GC-sensitive benchmark runner
+├── compare_gc.rb             # GC comparison report generator
 ├── lib/
 │   ├── benchmark_runner.rb   # Core benchmarking library
 │   └── ruby19_compat.rb      # Ruby 1.9.3 compatibility polyfills
 ├── benchmarks/
-│   ├── technique_benchmarks.rb  # Compare different approaches (18 categories)
+│   ├── technique_benchmarks.rb  # Compare different approaches (19 categories)
 │   ├── string_benchmarks.rb     # String operations
 │   ├── array_benchmarks.rb      # Array operations
 │   ├── hash_benchmarks.rb       # Hash operations
-│   └── parsing_benchmarks.rb    # Parsing operations
-├── results/                  # JSON output (bench_mri_*.json, bench_jruby10_*.json, bench_jruby1_*.json)
+│   ├── parsing_benchmarks.rb    # Parsing operations
+│   └── gc_benchmarks.rb         # GC-sensitive benchmarks
+├── results/                  # JSON output (bench_*.json, gc_*.json, comparison_*.md)
 ├── mri/.tool-versions        # ruby 3.4.7
 ├── jruby/.tool-versions      # ruby jruby-10.0.2.0, java temurin-21.0.9+10.0.LTS
 └── jruby17/.tool-versions    # ruby jruby-1.7.27, java corretto-8.472.08.1
@@ -166,6 +170,31 @@ JRuby 10 shows significant performance regressions with large hashes. See [jruby
 - Regression scales with hash size - worse for larger hashes
 
 Reproducer: run `benchmarks/hash_benchmarks.rb` and compare `Hash#[]= 500k int keys` vs `Java HashMap 500k int keys` on JRuby.
+
+### JVM Garbage Collector Impact
+
+The choice of JVM garbage collector has a **massive impact** on JRuby 10 performance for large data structures. See [jruby/jruby#9114](https://github.com/jruby/jruby/issues/9114).
+
+**Hash#keys (500k entries) by GC:**
+
+| GC | Time | vs MRI | vs G1 |
+|----|-----:|-------:|------:|
+| MRI 3.4.7 | 0.0004s | baseline | - |
+| Shenandoah | 0.0014s | 3x slower | **8x faster** |
+| ZGC | 0.0017s | 4x slower | **7x faster** |
+| G1 (default) | 0.011s | 25x slower | baseline |
+| Parallel | 0.019s | 43x slower | 0.6x slower |
+
+**Recommendation for JRuby 10:**
+
+```bash
+# Use Shenandoah (best) or ZGC for workloads with large data structures
+export JRUBY_OPTS="-J-XX:+UseShenandoahGC"
+# or
+export JRUBY_OPTS="-J-XX:+UseZGC"
+```
+
+Run `./run_gc_comparison.sh` to test GC impact on your system.
 
 ### Universal Best Practices
 
