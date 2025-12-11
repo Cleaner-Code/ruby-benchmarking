@@ -208,6 +208,10 @@ Performance issues we've reported to the JRuby project:
 | [#9116](https://github.com/jruby/jruby/issues/9116) | Array#include? 3x regression vs JRuby 1.7 | Fix identified |
 | [#9129](https://github.com/jruby/jruby/issues/9129) | String encoding conversion 4.3x regression | Open |
 | [#9130](https://github.com/jruby/jruby/issues/9130) | Line-by-line parsing 3.6x regression | Open |
+| [#9131](https://github.com/jruby/jruby/issues/9131) | Float() parsing 2x regression | Open |
+| [#9132](https://github.com/jruby/jruby/issues/9132) | Integer() parsing 1.9x regression | Open |
+| [#9133](https://github.com/jruby/jruby/issues/9133) | CSV.parse 1.8x regression | Open |
+| [#9134](https://github.com/jruby/jruby/issues/9134) | String#scan tokenization 1.5x regression | Open |
 
 ### Universal Best Practices
 
