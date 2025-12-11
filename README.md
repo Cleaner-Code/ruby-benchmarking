@@ -206,6 +206,8 @@ Performance issues we've reported to the JRuby project:
 | [#9114](https://github.com/jruby/jruby/issues/9114) | Hash#keys 22x slower (mitigated by Shenandoah GC) | Under investigation |
 | [#9115](https://github.com/jruby/jruby/issues/9115) | String-based eval 7-13x regression vs JRuby 1.7 | Expected (architectural) |
 | [#9116](https://github.com/jruby/jruby/issues/9116) | Array#include? 3x regression vs JRuby 1.7 | Fix identified |
+| [#9129](https://github.com/jruby/jruby/issues/9129) | String encoding conversion 4.3x regression | Open |
+| [#9130](https://github.com/jruby/jruby/issues/9130) | Line-by-line parsing 3.6x regression | Open |
 
 ### Universal Best Practices
 
