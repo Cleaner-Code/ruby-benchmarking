@@ -196,6 +196,17 @@ export JRUBY_OPTS="-J-XX:+UseZGC"
 
 Run `./run_gc_comparison.sh` to test GC impact on your system.
 
+### Open JRuby Issues
+
+Performance issues we've reported to the JRuby project:
+
+| Issue | Summary | Status |
+|-------|---------|--------|
+| [#9113](https://github.com/jruby/jruby/issues/9113) | Hash#[]= 8-10x slower with integer keys | Targeted for 10.0.3.0 |
+| [#9114](https://github.com/jruby/jruby/issues/9114) | Hash#keys 22x slower (mitigated by Shenandoah GC) | Under investigation |
+| [#9115](https://github.com/jruby/jruby/issues/9115) | String-based eval 7-13x regression vs JRuby 1.7 | Expected (architectural) |
+| [#9116](https://github.com/jruby/jruby/issues/9116) | Array#include? 3x regression vs JRuby 1.7 | Fix identified |
+
 ### Universal Best Practices
 
 These techniques are fastest across all Ruby implementations:
