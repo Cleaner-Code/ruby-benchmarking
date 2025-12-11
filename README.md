@@ -22,7 +22,7 @@ bench/
 │   ├── benchmark_runner.rb   # Core benchmarking library
 │   └── ruby19_compat.rb      # Ruby 1.9.3 compatibility polyfills
 ├── benchmarks/
-│   ├── technique_benchmarks.rb  # Compare different approaches (19 categories)
+│   ├── technique_benchmarks.rb  # Compare different approaches (24 categories)
 │   ├── string_benchmarks.rb     # String operations
 │   ├── array_benchmarks.rb      # Array operations
 │   ├── hash_benchmarks.rb       # Hash operations
@@ -76,6 +76,11 @@ Compares different coding approaches that produce the **same result**:
 | Block/Yield | `yield`, `block.call`, `proc.call`, `lambda.call`, unused closure overhead |
 | Eval | `eval`, `instance_eval`, `class_eval`, `binding.eval`, string vs block |
 | Caller | `caller()`, `caller(0)`, `caller(0, 1)`, `caller_locations` |
+| Marshal | `dump/load` small, medium, dump only, load only |
+| Memoization | `\|\|=`, `fetch` block, `key?` + `[]=`, ivar `\|\|=` |
+| Set vs Array | `Array#include?` vs `Set.new+include?` vs reused Set |
+| Mutex | no sync, `synchronize`, `lock/unlock`, `try_lock` |
+| Thread-local | `Thread.current[]`, ivar, local var |
 
 ## Operation Benchmarks
 
