@@ -34,6 +34,11 @@ module TechniqueBenchmarks
     results.concat(block_yield_techniques(iterations))
     results.concat(eval_techniques(iterations))
     results.concat(caller_techniques(iterations))
+    results.concat(marshal_techniques(iterations))
+    results.concat(memoization_techniques(iterations))
+    results.concat(set_vs_array_techniques(iterations))
+    results.concat(mutex_techniques(iterations))
+    results.concat(thread_local_techniques(iterations))
 
     results
   end
@@ -779,5 +784,172 @@ module TechniqueBenchmarks
     end
 
     results
+  end
+
+  # === MARSHAL SERIALIZATION ===
+  def marshal_techniques(iterations)
+    puts "\n--- Marshal: serialization patterns ---"
+
+    small_data = { :id => 1, :name => "test", :values => [1, 2, 3] }
+    medium_data = {
+      :id => 1,
+      :name => "test" * 100,
+      :values => (1..1000).to_a,
+      :nested => { :a => 1, :b => 2, :c => (1..100).to_a }
+    }
+
+    [
+      BenchmarkRunner.run(:name => "MARSHAL: dump/load small 1k", :iterations => iterations) {
+        1000.times { Marshal.load(Marshal.dump(small_data)) }
+      },
+      BenchmarkRunner.run(:name => "MARSHAL: dump/load medium 1k", :iterations => iterations) {
+        1000.times { Marshal.load(Marshal.dump(medium_data)) }
+      },
+      BenchmarkRunner.run(:name => "MARSHAL: dump only medium 1k", :iterations => iterations) {
+        1000.times { Marshal.dump(medium_data) }
+      },
+      BenchmarkRunner.run(:name => "MARSHAL: load only medium 1k", :iterations => iterations) {
+        dumped = Marshal.dump(medium_data)
+        1000.times { Marshal.load(dumped) }
+      }
+    ]
+  end
+
+  # === MEMOIZATION PATTERNS ===
+  def memoization_techniques(iterations)
+    puts "\n--- Memoization: caching patterns ---"
+
+    [
+      BenchmarkRunner.run(:name => "MEMO: ||= hash key 100k", :iterations => iterations) {
+        cache = {}
+        100_000.times { |i|
+          key = i % 100
+          cache[key] ||= "computed_#{key}"
+        }
+      },
+      BenchmarkRunner.run(:name => "MEMO: fetch block 100k", :iterations => iterations) {
+        cache = {}
+        100_000.times { |i|
+          key = i % 100
+          cache.fetch(key) { cache[key] = "computed_#{key}" }
+        }
+      },
+      BenchmarkRunner.run(:name => "MEMO: key? + []= 100k", :iterations => iterations) {
+        cache = {}
+        100_000.times { |i|
+          key = i % 100
+          cache[key] = "computed_#{key}" unless cache.key?(key)
+          cache[key]
+        }
+      },
+      BenchmarkRunner.run(:name => "MEMO: ivar ||= 100k", :iterations => iterations) {
+        obj = Object.new
+        100_000.times {
+          val = obj.instance_variable_get(:@cached)
+          unless val
+            val = "computed"
+            obj.instance_variable_set(:@cached, val)
+          end
+          val
+        }
+      }
+    ]
+  end
+
+  # === SET VS ARRAY LOOKUP ===
+  def set_vs_array_techniques(iterations)
+    puts "\n--- Set vs Array: lookup patterns ---"
+
+    require 'set'
+
+    arr_10 = (1..10).to_a
+    arr_100 = (1..100).to_a
+    arr_1000 = (1..1000).to_a
+
+    results = [
+      BenchmarkRunner.run(:name => "SETARR: Array#include? 10 100k", :iterations => iterations) {
+        100_000.times { arr_10.include?(5) }
+      },
+      BenchmarkRunner.run(:name => "SETARR: Set.new+incl 10 100k", :iterations => iterations) {
+        100_000.times { Set.new(arr_10).include?(5) }
+      },
+      BenchmarkRunner.run(:name => "SETARR: Set reuse 10 100k", :iterations => iterations) {
+        s = Set.new(arr_10)
+        100_000.times { s.include?(5) }
+      },
+      BenchmarkRunner.run(:name => "SETARR: Array#include? 1k 10k", :iterations => iterations) {
+        10_000.times { arr_1000.include?(500) }
+      },
+      BenchmarkRunner.run(:name => "SETARR: Set.new+incl 1k 10k", :iterations => iterations) {
+        10_000.times { Set.new(arr_1000).include?(500) }
+      },
+      BenchmarkRunner.run(:name => "SETARR: Set reuse 1k 10k", :iterations => iterations) {
+        s = Set.new(arr_1000)
+        10_000.times { s.include?(500) }
+      }
+    ]
+
+    results
+  end
+
+  # === MUTEX SYNCHRONIZATION ===
+  def mutex_techniques(iterations)
+    puts "\n--- Mutex: synchronization overhead ---"
+
+    mutex = Mutex.new
+    value = 0
+
+    [
+      BenchmarkRunner.run(:name => "MUTEX: no sync 100k", :iterations => iterations) {
+        v = 0
+        100_000.times { v += 1 }
+      },
+      BenchmarkRunner.run(:name => "MUTEX: synchronize 100k", :iterations => iterations) {
+        v = 0
+        100_000.times { mutex.synchronize { v += 1 } }
+      },
+      BenchmarkRunner.run(:name => "MUTEX: lock/unlock 100k", :iterations => iterations) {
+        v = 0
+        100_000.times {
+          mutex.lock
+          v += 1
+          mutex.unlock
+        }
+      },
+      BenchmarkRunner.run(:name => "MUTEX: try_lock 100k", :iterations => iterations) {
+        v = 0
+        100_000.times {
+          if mutex.try_lock
+            v += 1
+            mutex.unlock
+          end
+        }
+      }
+    ]
+  end
+
+  # === THREAD-LOCAL STORAGE ===
+  def thread_local_techniques(iterations)
+    puts "\n--- Thread-local: storage patterns ---"
+
+    Thread.current[:bench_key] = "value"
+
+    [
+      BenchmarkRunner.run(:name => "THREAD: current[] read 100k", :iterations => iterations) {
+        100_000.times { Thread.current[:bench_key] }
+      },
+      BenchmarkRunner.run(:name => "THREAD: current[] write 100k", :iterations => iterations) {
+        100_000.times { Thread.current[:bench_key] = "value" }
+      },
+      BenchmarkRunner.run(:name => "THREAD: ivar read 100k", :iterations => iterations) {
+        obj = Object.new
+        obj.instance_variable_set(:@val, "value")
+        100_000.times { obj.instance_variable_get(:@val) }
+      },
+      BenchmarkRunner.run(:name => "THREAD: local var 100k", :iterations => iterations) {
+        local = "value"
+        100_000.times { local }
+      }
+    ]
   end
 end

@@ -24,7 +24,12 @@ class BenchmarkComparator
     'CALL:' => 'Method Invocation',
     'BLOCK:' => 'Block/Yield',
     'EVAL:' => 'Eval',
-    'CALLER:' => 'Caller'
+    'CALLER:' => 'Caller',
+    'MARSHAL:' => 'Marshal',
+    'MEMO:' => 'Memoization',
+    'SETARR:' => 'Set vs Array',
+    'MUTEX:' => 'Mutex',
+    'THREAD:' => 'Thread-local'
   }
 
   def initialize(files)
