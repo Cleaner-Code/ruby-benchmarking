@@ -227,6 +227,7 @@ Performance issues we've reported to the JRuby project:
 | [#9134](https://github.com/jruby/jruby/issues/9134) | String#scan tokenization 1.5x regression | Open |
 | [#9135](https://github.com/jruby/jruby/issues/9135) | Range#to_a 3.25x regression | Open |
 | [#9136](https://github.com/jruby/jruby/issues/9136) | Marshal.load 2.9x regression | Open |
+| [#9137](https://github.com/jruby/jruby/issues/9137) | String#dup 4.5x regression | Open |
 
 ### Universal Best Practices
 
