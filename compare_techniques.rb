@@ -29,7 +29,15 @@ class BenchmarkComparator
     'MEMO:' => 'Memoization',
     'SETARR:' => 'Set vs Array',
     'MUTEX:' => 'Mutex',
-    'THREAD:' => 'Thread-local'
+    'THREAD:' => 'Thread-local',
+    'STRUCT:' => 'Data Structures',
+    'YAML:' => 'YAML',
+    'LAZY:' => 'Lazy Evaluation',
+    'GROUP:' => 'Grouping',
+    'META:' => 'Metaprogramming',
+    'EXC:' => 'Exceptions',
+    'FREEZE:' => 'String Freeze',
+    'SPLIT:' => 'Split Patterns'
   }
 
   def initialize(files)

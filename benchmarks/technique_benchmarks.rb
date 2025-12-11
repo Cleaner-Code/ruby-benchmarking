@@ -39,6 +39,14 @@ module TechniqueBenchmarks
     results.concat(set_vs_array_techniques(iterations))
     results.concat(mutex_techniques(iterations))
     results.concat(thread_local_techniques(iterations))
+    results.concat(data_structure_techniques(iterations))
+    results.concat(yaml_techniques(iterations))
+    results.concat(lazy_techniques(iterations))
+    results.concat(grouping_techniques(iterations))
+    results.concat(metaprogramming_techniques(iterations))
+    results.concat(exception_techniques(iterations))
+    results.concat(string_freeze_techniques(iterations))
+    results.concat(split_techniques(iterations))
 
     results
   end
@@ -949,6 +957,336 @@ module TechniqueBenchmarks
       BenchmarkRunner.run(:name => "THREAD: local var 100k", :iterations => iterations) {
         local = "value"
         100_000.times { local }
+      }
+    ]
+  end
+
+  # === DATA STRUCTURES: Struct vs Class vs Hash ===
+  def data_structure_techniques(iterations)
+    puts "\n--- Data Structures: Struct vs Class vs Hash ---"
+
+    # Define test class
+    klass = Class.new do
+      attr_accessor :id, :name, :value
+      def initialize(id, name, value)
+        @id = id
+        @name = name
+        @value = value
+      end
+    end
+
+    # Define test struct
+    test_struct = Struct.new(:id, :name, :value)
+
+    [
+      BenchmarkRunner.run(:name => "STRUCT: Hash create 10k", :iterations => iterations) {
+        10_000.times { |i| { :id => i, :name => "item#{i}", :value => i * 10 } }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Struct create 10k", :iterations => iterations) {
+        10_000.times { |i| test_struct.new(i, "item#{i}", i * 10) }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Class create 10k", :iterations => iterations) {
+        10_000.times { |i| klass.new(i, "item#{i}", i * 10) }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Hash read 100k", :iterations => iterations) {
+        h = { :id => 1, :name => "test", :value => 100 }
+        100_000.times { h[:name] }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Struct read 100k", :iterations => iterations) {
+        s = test_struct.new(1, "test", 100)
+        100_000.times { s.name }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Class read 100k", :iterations => iterations) {
+        obj = klass.new(1, "test", 100)
+        100_000.times { obj.name }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Hash write 100k", :iterations => iterations) {
+        h = { :id => 1, :name => "test", :value => 100 }
+        100_000.times { |i| h[:name] = "test#{i}" }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Struct write 100k", :iterations => iterations) {
+        s = test_struct.new(1, "test", 100)
+        100_000.times { |i| s.name = "test#{i}" }
+      },
+      BenchmarkRunner.run(:name => "STRUCT: Class write 100k", :iterations => iterations) {
+        obj = klass.new(1, "test", 100)
+        100_000.times { |i| obj.name = "test#{i}" }
+      }
+    ]
+  end
+
+  # === YAML SERIALIZATION ===
+  def yaml_techniques(iterations)
+    puts "\n--- YAML: serialization patterns ---"
+
+    require 'yaml'
+
+    small_data = { :id => 1, :name => "test", :values => [1, 2, 3] }
+    medium_data = {
+      :id => 1,
+      :name => "test" * 50,
+      :values => (1..500).to_a,
+      :nested => { :a => 1, :b => 2, :c => (1..50).to_a }
+    }
+
+    [
+      BenchmarkRunner.run(:name => "YAML: dump/load small 1k", :iterations => iterations) {
+        1000.times { YAML.load(YAML.dump(small_data)) }
+      },
+      BenchmarkRunner.run(:name => "YAML: dump/load medium 500", :iterations => iterations) {
+        500.times { YAML.load(YAML.dump(medium_data)) }
+      },
+      BenchmarkRunner.run(:name => "YAML: dump only medium 1k", :iterations => iterations) {
+        1000.times { YAML.dump(medium_data) }
+      },
+      BenchmarkRunner.run(:name => "YAML: load only medium 1k", :iterations => iterations) {
+        dumped = YAML.dump(medium_data)
+        1000.times { YAML.load(dumped) }
+      }
+    ]
+  end
+
+  # === LAZY EVALUATION ===
+  def lazy_techniques(iterations)
+    puts "\n--- Lazy: lazy vs eager evaluation ---"
+
+    # Lazy requires Ruby 2.0+
+    unless [].respond_to?(:lazy)
+      puts "  [skipped] Lazy evaluation (requires Ruby 2.0+)"
+      return []
+    end
+
+    data = (1..10000).to_a
+
+    [
+      BenchmarkRunner.run(:name => "LAZY: find (eager)", :iterations => iterations) {
+        1000.times { data.find { |x| x > 5000 } }
+      },
+      BenchmarkRunner.run(:name => "LAZY: lazy.find", :iterations => iterations) {
+        1000.times { data.lazy.find { |x| x > 5000 } }
+      },
+      BenchmarkRunner.run(:name => "LAZY: select.first (eager)", :iterations => iterations) {
+        1000.times { data.select { |x| x > 5000 }.first }
+      },
+      BenchmarkRunner.run(:name => "LAZY: lazy.select.first", :iterations => iterations) {
+        1000.times { data.lazy.select { |x| x > 5000 }.first }
+      },
+      BenchmarkRunner.run(:name => "LAZY: map.first 10 (eager)", :iterations => iterations) {
+        1000.times { data.map { |x| x * 2 }.first(10) }
+      },
+      BenchmarkRunner.run(:name => "LAZY: lazy.map.first 10", :iterations => iterations) {
+        1000.times { data.lazy.map { |x| x * 2 }.first(10) }
+      }
+    ]
+  end
+
+  # === GROUPING PATTERNS ===
+  def grouping_techniques(iterations)
+    puts "\n--- Grouping: group_by patterns ---"
+
+    data = (1..10000).map { |i| { :id => i, :category => "cat#{i % 100}", :value => i } }
+
+    [
+      BenchmarkRunner.run(:name => "GROUP: group_by block 100", :iterations => iterations) {
+        100.times { data.group_by { |h| h[:category] } }
+      },
+      BenchmarkRunner.run(:name => "GROUP: each_with_object 100", :iterations => iterations) {
+        100.times {
+          data.each_with_object({}) { |h, acc|
+            (acc[h[:category]] ||= []) << h
+          }
+        }
+      },
+      BenchmarkRunner.run(:name => "GROUP: inject grouping 100", :iterations => iterations) {
+        100.times {
+          data.inject({}) { |acc, h|
+            (acc[h[:category]] ||= []) << h
+            acc
+          }
+        }
+      },
+      BenchmarkRunner.run(:name => "GROUP: partition 2 groups 100", :iterations => iterations) {
+        simple = (1..10000).to_a
+        100.times { simple.partition { |x| x.even? } }
+      },
+      BenchmarkRunner.run(:name => "GROUP: dual select 100", :iterations => iterations) {
+        simple = (1..10000).to_a
+        100.times {
+          simple.select { |x| x.even? }
+          simple.select { |x| x.odd? }
+        }
+      }
+    ]
+  end
+
+  # === METAPROGRAMMING ===
+  def metaprogramming_techniques(iterations)
+    puts "\n--- Metaprogramming: dynamic method patterns ---"
+
+    base_class = Class.new do
+      def direct_method
+        42
+      end
+    end
+
+    # Pre-define dynamic methods
+    dynamic_class = Class.new do
+      define_method(:dynamic_method) { 42 }
+    end
+
+    obj_direct = base_class.new
+    obj_dynamic = dynamic_class.new
+
+    [
+      BenchmarkRunner.run(:name => "META: def method call 100k", :iterations => iterations) {
+        100_000.times { obj_direct.direct_method }
+      },
+      BenchmarkRunner.run(:name => "META: define_method call 100k", :iterations => iterations) {
+        100_000.times { obj_dynamic.dynamic_method }
+      },
+      BenchmarkRunner.run(:name => "META: send 100k", :iterations => iterations) {
+        100_000.times { obj_direct.send(:direct_method) }
+      },
+      BenchmarkRunner.run(:name => "META: respond_to?+send 100k", :iterations => iterations) {
+        100_000.times {
+          obj_direct.send(:direct_method) if obj_direct.respond_to?(:direct_method)
+        }
+      },
+      BenchmarkRunner.run(:name => "META: method().call 100k", :iterations => iterations) {
+        m = obj_direct.method(:direct_method)
+        100_000.times { m.call }
+      },
+      BenchmarkRunner.run(:name => "META: ivar_get 100k", :iterations => iterations) {
+        obj = Object.new
+        obj.instance_variable_set(:@value, 42)
+        100_000.times { obj.instance_variable_get(:@value) }
+      },
+      BenchmarkRunner.run(:name => "META: ivar_set 100k", :iterations => iterations) {
+        obj = Object.new
+        100_000.times { obj.instance_variable_set(:@value, 42) }
+      }
+    ]
+  end
+
+  # === EXCEPTION HANDLING ===
+  def exception_techniques(iterations)
+    puts "\n--- Exceptions: error handling overhead ---"
+
+    [
+      BenchmarkRunner.run(:name => "EXC: no exception 100k", :iterations => iterations) {
+        100_000.times { 1 + 1 }
+      },
+      BenchmarkRunner.run(:name => "EXC: begin/rescue none 100k", :iterations => iterations) {
+        100_000.times {
+          begin
+            1 + 1
+          rescue
+            nil
+          end
+        }
+      },
+      BenchmarkRunner.run(:name => "EXC: raise/rescue 10k", :iterations => iterations) {
+        10_000.times {
+          begin
+            raise "error"
+          rescue
+            nil
+          end
+        }
+      },
+      BenchmarkRunner.run(:name => "EXC: raise/rescue msg 10k", :iterations => iterations) {
+        10_000.times {
+          begin
+            raise StandardError, "error message"
+          rescue => e
+            e.message
+          end
+        }
+      },
+      BenchmarkRunner.run(:name => "EXC: throw/catch 10k", :iterations => iterations) {
+        10_000.times {
+          catch(:done) { throw :done, 42 }
+        }
+      },
+      BenchmarkRunner.run(:name => "EXC: nested throw/catch 10k", :iterations => iterations) {
+        10_000.times {
+          catch(:outer) {
+            catch(:inner) {
+              throw :outer, 42
+            }
+          }
+        }
+      }
+    ]
+  end
+
+  # === STRING FREEZING/DEDUP ===
+  def string_freeze_techniques(iterations)
+    puts "\n--- String Freeze: deduplication patterns ---"
+
+    results = []
+
+    results << BenchmarkRunner.run(:name => "FREEZE: literal 100k", :iterations => iterations) {
+      100_000.times { "hello" }
+    }
+
+    results << BenchmarkRunner.run(:name => "FREEZE: .freeze 100k", :iterations => iterations) {
+      100_000.times { "hello".freeze }
+    }
+
+    # -"string" only works in Ruby 2.3+ with frozen_string_literal
+    if RUBY_VERSION >= "2.3"
+      results << BenchmarkRunner.run(:name => "FREEZE: -\"\" dedup 100k", :iterations => iterations) {
+        100_000.times { -"hello" }
+      }
+    end
+
+    results << BenchmarkRunner.run(:name => "FREEZE: dup 100k", :iterations => iterations) {
+      s = "hello"
+      100_000.times { s.dup }
+    }
+
+    results << BenchmarkRunner.run(:name => "FREEZE: interpolate 100k", :iterations => iterations) {
+      val = "world"
+      100_000.times { "hello #{val}" }
+    }
+
+    results << BenchmarkRunner.run(:name => "FREEZE: interpolate.freeze 100k", :iterations => iterations) {
+      val = "world"
+      100_000.times { "hello #{val}".freeze }
+    }
+
+    results
+  end
+
+  # === STRING SPLIT PATTERNS ===
+  def split_techniques(iterations)
+    puts "\n--- Split: String#split patterns ---"
+
+    csv_line = "field1,field2,field3,field4,field5,field6,field7,field8,field9,field10"
+    lines = "line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10"
+
+    [
+      BenchmarkRunner.run(:name => "SPLIT: split no limit 10k", :iterations => iterations) {
+        10_000.times { csv_line.split(",") }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: split limit 3 10k", :iterations => iterations) {
+        10_000.times { csv_line.split(",", 3) }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: split limit -1 10k", :iterations => iterations) {
+        10_000.times { csv_line.split(",", -1) }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: split newline 10k", :iterations => iterations) {
+        10_000.times { lines.split("\n") }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: each_line 10k", :iterations => iterations) {
+        10_000.times { lines.each_line.to_a }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: lines method 10k", :iterations => iterations) {
+        10_000.times { lines.lines }
+      },
+      BenchmarkRunner.run(:name => "SPLIT: scan pattern 10k", :iterations => iterations) {
+        10_000.times { csv_line.scan(/[^,]+/) }
       }
     ]
   end

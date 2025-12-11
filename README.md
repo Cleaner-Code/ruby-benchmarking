@@ -22,7 +22,7 @@ bench/
 │   ├── benchmark_runner.rb   # Core benchmarking library
 │   └── ruby19_compat.rb      # Ruby 1.9.3 compatibility polyfills
 ├── benchmarks/
-│   ├── technique_benchmarks.rb  # Compare different approaches (24 categories)
+│   ├── technique_benchmarks.rb  # Compare different approaches (32 categories)
 │   ├── string_benchmarks.rb     # String operations
 │   ├── array_benchmarks.rb      # Array operations
 │   ├── hash_benchmarks.rb       # Hash operations
@@ -81,6 +81,14 @@ Compares different coding approaches that produce the **same result**:
 | Set vs Array | `Array#include?` vs `Set.new+include?` vs reused Set |
 | Mutex | no sync, `synchronize`, `lock/unlock`, `try_lock` |
 | Thread-local | `Thread.current[]`, ivar, local var |
+| Data Structures | Hash vs Struct vs Class create/read/write |
+| YAML | `dump/load` small, medium, dump only, load only |
+| Lazy Evaluation | `find` vs `lazy.find`, `select.first` vs `lazy.select.first` |
+| Grouping | `group_by`, `each_with_object`, `inject`, `partition` vs dual `select` |
+| Metaprogramming | `def` vs `define_method`, `send`, `respond_to?+send`, `method().call`, `ivar_get/set` |
+| Exceptions | no exception, `begin/rescue`, `raise/rescue`, `throw/catch` |
+| String Freeze | literal, `.freeze`, `-""` dedup, `dup`, interpolation |
+| Split Patterns | `split` with/without limit, `each_line`, `lines`, `scan` |
 
 ## Operation Benchmarks
 
