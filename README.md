@@ -1,20 +1,21 @@
 # Ruby Benchmark Suite
 
-Benchmarking environment comparing MRI Ruby and JRuby performance, with focus on finding optimal coding techniques.
+Benchmarking environment comparing MRI Ruby, JRuby, and TruffleRuby performance, with focus on finding optimal coding techniques.
 
 ## Versions
 
 - **MRI Ruby**: 3.4.7
 - **JRuby 10**: 10.0.2.0 (Ruby 3.4.2 compatible) + Java Temurin 21.0.9 LTS
 - **JRuby 1.7**: 1.7.27 (Ruby 1.9.3 compatible) + Java Corretto 8
+- **TruffleRuby**: 25.0.0 (Ruby 3.3.7 compatible) + Oracle GraalVM
 
 ## Project Structure
 
 ```
 bench/
-├── run_techniques_all.sh     # Main entry: run MRI, JRuby 10, JRuby 1.7, compare
+├── run_techniques_all.sh     # Main entry: run all 4 implementations, compare
 ├── run_techniques.rb         # Benchmark runner
-├── compare_techniques.rb     # MRI vs JRuby comparison
+├── compare_techniques.rb     # Cross-implementation comparison
 ├── run_gc_comparison.sh      # GC comparison: run with G1, Parallel, ZGC, Shenandoah
 ├── run_gc_benchmarks.rb      # GC-sensitive benchmark runner
 ├── compare_gc.rb             # GC comparison report generator
@@ -31,7 +32,8 @@ bench/
 ├── results/                  # JSON output (bench_*.json, gc_*.json, comparison_*.md)
 ├── mri/.tool-versions        # ruby 3.4.7
 ├── jruby/.tool-versions      # ruby jruby-10.0.2.0, java temurin-21.0.9+10.0.LTS
-└── jruby17/.tool-versions    # ruby jruby-1.7.27, java corretto-8.472.08.1
+├── jruby17/.tool-versions    # ruby jruby-1.7.27, java corretto-8.472.08.1
+└── truffleruby/.tool-versions # ruby truffleruby+graalvm-25.0.0
 ```
 
 ## Setup
@@ -40,6 +42,7 @@ bench/
 cd mri && asdf install
 cd ../jruby && asdf install
 cd ../jruby17 && asdf install
+cd ../truffleruby && asdf install
 ```
 
 ## Usage
@@ -102,7 +105,7 @@ Tests different operations (not comparing approaches). Hash operations use **str
 
 ## Output
 
-Results saved to `results/bench_{mri,jruby10,jruby1}_TIMESTAMP.json`:
+Results saved to `results/bench_{mri,jruby10,jruby1,truffleruby}_TIMESTAMP.json`:
 
 ```json
 {
@@ -138,17 +141,18 @@ This ensures benchmarks reflect true native performance of each Ruby version.
 
 When a block is passed to a method but never called, there is still overhead from closure creation:
 
-| Pattern | MRI | JRuby 10 | JRuby 1.7 |
-|---------|----:|--------:|----------:|
-| No block (baseline) | - | - | - |
-| `def foo; yield; end` (never yields) | +26% | +350% | +82% |
-| `def foo(&block); end` (never calls) | +68% | +343% | +266% |
+| Pattern | MRI | JRuby 10 | JRuby 1.7 | TruffleRuby |
+|---------|----:|--------:|----------:|------------:|
+| No block (baseline) | - | - | - | - |
+| `def foo; yield; end` (never yields) | +26% | +350% | +82% | +122% |
+| `def foo(&block); end` (never calls) | +68% | +343% | +266% | +250% |
 
 **Takeaways:**
 
 - **MRI**: `yield` syntax is cheaper than `&block` for unused closures
 - **JRuby 10**: JIT optimizes both patterns equally well
 - **JRuby 1.7**: `&block` has significantly higher overhead
+- **TruffleRuby**: Both patterns have overhead, but base block performance is exceptional
 
 ### JRuby 10 Large Hash Regression
 
@@ -229,20 +233,61 @@ Performance issues we've reported to the JRuby project:
 | [#9136](https://github.com/jruby/jruby/issues/9136) | Marshal.load 2.9x regression | Open |
 | [#9137](https://github.com/jruby/jruby/issues/9137) | String#dup 4.5x regression | Open |
 
+### TruffleRuby Performance
+
+TruffleRuby 25.0.0 with GraalVM's JIT compiler shows exceptional performance once warmed up:
+
+**Benchmark Win Distribution:**
+
+| Ruby | Total Wins |
+|:-----|----------:|
+| TruffleRuby | 187 (79%) |
+| MRI | 23 (10%) |
+| JRuby 10 | 17 (7%) |
+| JRuby 1.7 | 9 (4%) |
+
+**TruffleRuby Strengths:**
+
+- Block/yield operations: Near-zero overhead (vs 50-100ms on MRI)
+- Array iteration: 8-70x faster than other implementations
+- String operations (gsub, scan, split): 3-8x faster
+- Hash access: 3-4x faster
+- Metaprogramming: Near-native speed for `define_method`, `send`, etc.
+
+**TruffleRuby Weaknesses:**
+
+- Cold start / warmup time (JVM startup + JIT compilation)
+- Higher memory usage (GraalVM overhead)
+- `caller()` / `caller_locations()`: 10-100x slower than MRI
+- `eval` with strings: Similar overhead to JRuby 10 (JIT can't optimize)
+- JSON/CSV parsing: Slower than MRI's C extensions
+
+**Note:** TruffleRuby's exceptional performance comes after JIT warmup. For short-lived scripts, MRI or JRuby may be faster due to startup time.
+
 ### Universal Best Practices
 
-These techniques are fastest across all Ruby implementations:
+These techniques are fastest across all four Ruby implementations:
 
-| Category | Best Technique |
-|----------|----------------|
-| String Building | `Array#join` |
-| Array Building | `Range#to_a` |
-| Array Sorting | `sort!` |
-| String Search | `start_with?` |
-| Number Conversion | `map(&:to_i)` |
-| Object Duplication | `to_h` |
-| Method Invocation | direct call |
-| Block/Yield | `each { }` |
-| Hash Key Iteration | `keys.map` |
+| Category | Best Technique | Notes |
+|----------|----------------|-------|
+| Array Building | `Range#to_a` | All agree |
+| String Search | `start_with?` | All agree |
+| Object Duplication | `to_h` | All agree |
+| Eval | direct call (baseline) | All agree |
+| Memoization | `@ivar \|\|=` | All agree |
+| Set vs Array | reused Set | All agree |
+| Mutex | no sync (baseline) | All agree |
+| Thread-local | local var | All agree |
+| Grouping | `partition` | All agree |
+| Marshal | `dump/load` small | All agree |
+
+**Implementation-specific preferences:**
+
+| Category | MRI | JRuby 10 | JRuby 1.7 | TruffleRuby |
+|----------|-----|----------|-----------|-------------|
+| String Building | `Array#join` | `concat` | `inject <<` | `interpolation` |
+| Array Iteration | `reduce(:+)` | `sum` | `reduce(:+)` | `for in` |
+| Block/Yield | `each { }` | `each { }` | `each { }` | `yield` |
+| Hash Key Iteration | `keys.map` | `keys.map` | `keys.map` | `map { \|k,_\| }` |
 
 See `results/comparison_*.md` for detailed comparisons.

@@ -33,18 +33,29 @@ BENCH_ITERATIONS=$ITERATIONS ruby "$SCRIPT_DIR/run_techniques.rb"
 
 echo
 echo "=========================================="
+echo "Running TruffleRuby benchmarks..."
+echo "=========================================="
+cd "$SCRIPT_DIR/truffleruby"
+# TruffleRuby uses bundled GraalVM, no separate JAVA_HOME needed
+unset JAVA_HOME
+BENCH_ITERATIONS=$ITERATIONS ruby "$SCRIPT_DIR/run_techniques.rb"
+
+echo
+echo "=========================================="
 echo "Comparing all results..."
 echo "=========================================="
 cd "$SCRIPT_DIR"
 MRI_RESULT=$(ls -t results/bench_mri_*.json 2>/dev/null | head -1)
 JRUBY10_RESULT=$(ls -t results/bench_jruby10_*.json 2>/dev/null | head -1)
 JRUBY17_RESULT=$(ls -t results/bench_jruby1_*.json 2>/dev/null | head -1)
+TRUFFLERUBY_RESULT=$(ls -t results/bench_truffleruby_*.json 2>/dev/null | head -1)
 
 # Build list of available results
 RESULTS=""
 [ -n "$MRI_RESULT" ] && RESULTS="$RESULTS $MRI_RESULT"
 [ -n "$JRUBY10_RESULT" ] && RESULTS="$RESULTS $JRUBY10_RESULT"
 [ -n "$JRUBY17_RESULT" ] && RESULTS="$RESULTS $JRUBY17_RESULT"
+[ -n "$TRUFFLERUBY_RESULT" ] && RESULTS="$RESULTS $TRUFFLERUBY_RESULT"
 
 if [ -n "$RESULTS" ]; then
   ruby compare_techniques.rb $RESULTS

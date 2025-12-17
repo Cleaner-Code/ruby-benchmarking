@@ -139,6 +139,10 @@ module BenchmarkRunner
         :eden_used => eden ? eden.getUsage.getUsed : 0,
         :eden_peak => eden ? eden.getPeakUsage.getUsed : 0
       }
+    elsif RUBY_ENGINE == 'truffleruby'
+      # TruffleRuby doesn't support ObjectSpace.count_objects
+      # Return empty hash - memory stats come from GC module instead
+      {}
     else
       counts = ObjectSpace.count_objects
       {

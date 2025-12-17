@@ -58,6 +58,8 @@ class BenchmarkComparator
       'JRuby 1.7'
     elsif version.include?('JRuby')
       'JRuby 10'
+    elsif version.include?('truffleruby')
+      'TruffleRuby'
     else
       'MRI'
     end

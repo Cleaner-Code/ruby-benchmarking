@@ -158,10 +158,13 @@ class TechniqueSuite
   def save_results
     FileUtils.mkdir_p(RESULTS_DIR)
 
-    engine = if RUBY_ENGINE == 'jruby'
+    engine = case RUBY_ENGINE
+             when 'jruby'
                # Include JRuby major version to distinguish 1.7 from 10.x
                major_version = defined?(JRUBY_VERSION) ? JRUBY_VERSION.split('.').first : 'x'
                "jruby#{major_version}"
+             when 'truffleruby'
+               'truffleruby'
              else
                'mri'
              end
