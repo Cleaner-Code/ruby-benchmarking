@@ -382,8 +382,9 @@ if __FILE__ == $0
     mri = Dir['results/bench_mri_*.json'].sort.last
     jruby10 = Dir['results/bench_jruby10_*.json'].sort.last
     jruby17 = Dir['results/bench_jruby1_*.json'].sort.last
+    truffleruby = Dir['results/bench_truffleruby_*.json'].sort.last
 
-    files = [mri, jruby10, jruby17].compact
+    files = [mri, jruby10, jruby17, truffleruby].compact
 
     if files.size < 2
       puts "Usage: ruby compare_techniques.rb <result1.json> <result2.json> [result3.json ...]"

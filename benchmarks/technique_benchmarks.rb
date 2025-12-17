@@ -635,16 +635,21 @@ module TechniqueBenchmarks
   end
 
   # === BLOCK/YIELD PERFORMANCE ===
+  # NOTE: All benchmarks accumulate results to prevent JIT dead code elimination
   def block_yield_techniques(iterations)
     puts "\n--- Block/Yield: 2M iterations ---"
 
-    # Helper methods for yield testing
+    # Helper methods for yield testing - accumulate results to prevent JIT optimization
     def self.with_yield(n)
-      n.times { yield }
+      sum = 0
+      n.times { sum += yield }
+      sum
     end
 
     def self.with_block(n, &block)
-      n.times { block.call }
+      sum = 0
+      n.times { sum += block.call }
+      sum
     end
 
     def self.nested_yield(n)
@@ -665,56 +670,70 @@ module TechniqueBenchmarks
     my_lambda = lambda { 1 + 1 }
     n = 2_000_000  # 2M iterations for stable measurements
     arr = Array.new(500_000) { rand(100) }
+    result = nil  # Prevent JIT from optimizing away results
 
     [
       BenchmarkRunner.run(:name => "BLOCK: yield", :iterations => iterations) {
-        with_yield(n) { 1 + 1 }
+        result = with_yield(n) { 1 + 1 }
       },
       BenchmarkRunner.run(:name => "BLOCK: block.call", :iterations => iterations) {
-        with_block(n) { 1 + 1 }
+        result = with_block(n) { 1 + 1 }
       },
       BenchmarkRunner.run(:name => "BLOCK: nested yield", :iterations => iterations) {
-        nested_yield(n) { 1 + 1 }
+        result = nested_yield(n) { 1 + 1 }
       },
       BenchmarkRunner.run(:name => "BLOCK: proc.call", :iterations => iterations) {
-        n.times { my_proc.call }
+        sum = 0
+        n.times { sum += my_proc.call }
+        result = sum
       },
       BenchmarkRunner.run(:name => "BLOCK: lambda.call", :iterations => iterations) {
-        n.times { my_lambda.call }
+        sum = 0
+        n.times { sum += my_lambda.call }
+        result = sum
       },
       BenchmarkRunner.run(:name => "BLOCK: each { }", :iterations => iterations) {
-        arr.each { |x| x + 1 }
+        sum = 0
+        arr.each { |x| sum += x + 1 }
+        result = sum
       },
       BenchmarkRunner.run(:name => "BLOCK: map { }", :iterations => iterations) {
-        arr.map { |x| x + 1 }
+        result = arr.map { |x| x + 1 }
       },
       BenchmarkRunner.run(:name => "BLOCK: select { }", :iterations => iterations) {
-        arr.select { |x| x > 50 }
+        result = arr.select { |x| x > 50 }
       },
       # Closure creation overhead - block passed but never called
       BenchmarkRunner.run(:name => "BLOCK: unused closure (&block)", :iterations => iterations) {
+        sum = 0
         n.times do
           x = 4711
-          noop_block { x * x }
+          sum += noop_block { x * x }
         end
+        result = sum
       },
       BenchmarkRunner.run(:name => "BLOCK: unused closure (yield)", :iterations => iterations) {
+        sum = 0
         n.times do
           x = 4711
-          noop_yield { x * x }
+          sum += noop_yield { x * x }
         end
+        result = sum
       },
       # Baseline: no block at all
       BenchmarkRunner.run(:name => "BLOCK: no block baseline", :iterations => iterations) {
+        sum = 0
         n.times do
           x = 4711
-          0
+          sum += 0
         end
+        result = sum
       }
     ]
   end
 
   # === EVAL PERFORMANCE ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def eval_techniques(iterations)
     puts "\n--- Eval: 50k iterations ---"
 
@@ -725,33 +744,50 @@ module TechniqueBenchmarks
 
     [
       BenchmarkRunner.run(:name => "EVAL: eval simple", :iterations => iterations) {
-        n.times { eval("1 + 1") }
+        sum = 0
+        n.times { sum += eval("1 + 1") }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: eval vars", :iterations => iterations) {
-        n.times { eval("x = 5; x * 2") }
+        sum = 0
+        n.times { sum += eval("x = 5; x * 2") }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: instance_eval str", :iterations => iterations) {
-        n.times { obj.instance_eval("1 + 1") }
+        sum = 0
+        n.times { sum += obj.instance_eval("1 + 1") }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: instance_eval blk", :iterations => iterations) {
-        n.times { obj.instance_eval { 1 + 1 } }
+        sum = 0
+        n.times { sum += obj.instance_eval { 1 + 1 } }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: class_eval str", :iterations => iterations) {
-        n.times { klass.class_eval("1 + 1") }
+        sum = 0
+        n.times { sum += klass.class_eval("1 + 1") }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: class_eval blk", :iterations => iterations) {
-        n.times { klass.class_eval { 1 + 1 } }
+        sum = 0
+        n.times { sum += klass.class_eval { 1 + 1 } }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: binding.eval", :iterations => iterations) {
-        n.times { b.eval("1 + 1") }
+        sum = 0
+        n.times { sum += b.eval("1 + 1") }
+        sum
       },
       BenchmarkRunner.run(:name => "EVAL: direct (baseline)", :iterations => iterations) {
-        n.times { 1 + 1 }
+        sum = 0
+        n.times { sum += 1 + 1 }
+        sum
       }
     ]
   end
 
   # === CALLER PERFORMANCE ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def caller_techniques(iterations)
     puts "\n--- Caller: 100k iterations ---"
 
@@ -759,20 +795,28 @@ module TechniqueBenchmarks
 
     results = [
       BenchmarkRunner.run(:name => "CALLER: caller()", :iterations => iterations) {
-        n.times { caller }
+        count = 0
+        n.times { count += caller.length }
+        count
       },
       BenchmarkRunner.run(:name => "CALLER: caller(0)", :iterations => iterations) {
-        n.times { caller(0) }
+        count = 0
+        n.times { count += caller(0).length }
+        count
       }
     ]
 
     # caller(start, length) - Ruby 2.0+
     if RUBY_VERSION >= '2.0'
       results << BenchmarkRunner.run(:name => "CALLER: caller(0, 1)", :iterations => iterations) {
-        n.times { caller(0, 1) }
+        count = 0
+        n.times { count += caller(0, 1).length }
+        count
       }
       results << BenchmarkRunner.run(:name => "CALLER: caller(0, 5)", :iterations => iterations) {
-        n.times { caller(0, 5) }
+        count = 0
+        n.times { count += caller(0, 5).length }
+        count
       }
     else
       puts "  [skipped] CALLER: caller(0, 1) (requires Ruby 2.0+)"
@@ -782,10 +826,14 @@ module TechniqueBenchmarks
     # caller_locations - Ruby 2.0+
     if Kernel.respond_to?(:caller_locations)
       results << BenchmarkRunner.run(:name => "CALLER: caller_locations(0, 1)", :iterations => iterations) {
-        n.times { caller_locations(0, 1) }
+        count = 0
+        n.times { count += caller_locations(0, 1).length }
+        count
       }
       results << BenchmarkRunner.run(:name => "CALLER: caller_locations(0, 5)", :iterations => iterations) {
-        n.times { caller_locations(0, 5) }
+        count = 0
+        n.times { count += caller_locations(0, 5).length }
+        count
       }
     else
       puts "  [skipped] CALLER: caller_locations (requires Ruby 2.0+)"
@@ -865,6 +913,7 @@ module TechniqueBenchmarks
   end
 
   # === SET VS ARRAY LOOKUP ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def set_vs_array_techniques(iterations)
     puts "\n--- Set vs Array: lookup patterns ---"
 
@@ -876,24 +925,36 @@ module TechniqueBenchmarks
 
     results = [
       BenchmarkRunner.run(:name => "SETARR: Array#include? 10 100k", :iterations => iterations) {
-        100_000.times { arr_10.include?(5) }
+        count = 0
+        100_000.times { count += 1 if arr_10.include?(5) }
+        count
       },
       BenchmarkRunner.run(:name => "SETARR: Set.new+incl 10 100k", :iterations => iterations) {
-        100_000.times { Set.new(arr_10).include?(5) }
+        count = 0
+        100_000.times { count += 1 if Set.new(arr_10).include?(5) }
+        count
       },
       BenchmarkRunner.run(:name => "SETARR: Set reuse 10 100k", :iterations => iterations) {
         s = Set.new(arr_10)
-        100_000.times { s.include?(5) }
+        count = 0
+        100_000.times { count += 1 if s.include?(5) }
+        count
       },
       BenchmarkRunner.run(:name => "SETARR: Array#include? 1k 10k", :iterations => iterations) {
-        10_000.times { arr_1000.include?(500) }
+        count = 0
+        10_000.times { count += 1 if arr_1000.include?(500) }
+        count
       },
       BenchmarkRunner.run(:name => "SETARR: Set.new+incl 1k 10k", :iterations => iterations) {
-        10_000.times { Set.new(arr_1000).include?(500) }
+        count = 0
+        10_000.times { count += 1 if Set.new(arr_1000).include?(500) }
+        count
       },
       BenchmarkRunner.run(:name => "SETARR: Set reuse 1k 10k", :iterations => iterations) {
         s = Set.new(arr_1000)
-        10_000.times { s.include?(500) }
+        count = 0
+        10_000.times { count += 1 if s.include?(500) }
+        count
       }
     ]
 
@@ -901,20 +962,22 @@ module TechniqueBenchmarks
   end
 
   # === MUTEX SYNCHRONIZATION ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def mutex_techniques(iterations)
     puts "\n--- Mutex: synchronization overhead ---"
 
     mutex = Mutex.new
-    value = 0
 
     [
       BenchmarkRunner.run(:name => "MUTEX: no sync 100k", :iterations => iterations) {
         v = 0
         100_000.times { v += 1 }
+        v
       },
       BenchmarkRunner.run(:name => "MUTEX: synchronize 100k", :iterations => iterations) {
         v = 0
         100_000.times { mutex.synchronize { v += 1 } }
+        v
       },
       BenchmarkRunner.run(:name => "MUTEX: lock/unlock 100k", :iterations => iterations) {
         v = 0
@@ -923,6 +986,7 @@ module TechniqueBenchmarks
           v += 1
           mutex.unlock
         }
+        v
       },
       BenchmarkRunner.run(:name => "MUTEX: try_lock 100k", :iterations => iterations) {
         v = 0
@@ -932,36 +996,46 @@ module TechniqueBenchmarks
             mutex.unlock
           end
         }
+        v
       }
     ]
   end
 
   # === THREAD-LOCAL STORAGE ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def thread_local_techniques(iterations)
     puts "\n--- Thread-local: storage patterns ---"
 
-    Thread.current[:bench_key] = "value"
+    Thread.current[:bench_key] = 1
 
     [
       BenchmarkRunner.run(:name => "THREAD: current[] read 100k", :iterations => iterations) {
-        100_000.times { Thread.current[:bench_key] }
+        sum = 0
+        100_000.times { sum += Thread.current[:bench_key] }
+        sum
       },
       BenchmarkRunner.run(:name => "THREAD: current[] write 100k", :iterations => iterations) {
-        100_000.times { Thread.current[:bench_key] = "value" }
+        100_000.times { |i| Thread.current[:bench_key] = i }
+        Thread.current[:bench_key]
       },
       BenchmarkRunner.run(:name => "THREAD: ivar read 100k", :iterations => iterations) {
         obj = Object.new
-        obj.instance_variable_set(:@val, "value")
-        100_000.times { obj.instance_variable_get(:@val) }
+        obj.instance_variable_set(:@val, 1)
+        sum = 0
+        100_000.times { sum += obj.instance_variable_get(:@val) }
+        sum
       },
       BenchmarkRunner.run(:name => "THREAD: local var 100k", :iterations => iterations) {
-        local = "value"
-        100_000.times { local }
+        local = 1
+        sum = 0
+        100_000.times { sum += local }
+        sum
       }
     ]
   end
 
   # === DATA STRUCTURES: Struct vs Class vs Hash ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def data_structure_techniques(iterations)
     puts "\n--- Data Structures: Struct vs Class vs Hash ---"
 
@@ -980,37 +1054,52 @@ module TechniqueBenchmarks
 
     [
       BenchmarkRunner.run(:name => "STRUCT: Hash create 10k", :iterations => iterations) {
-        10_000.times { |i| { :id => i, :name => "item#{i}", :value => i * 10 } }
+        result = nil
+        10_000.times { |i| result = { :id => i, :name => "item#{i}", :value => i * 10 } }
+        result
       },
       BenchmarkRunner.run(:name => "STRUCT: Struct create 10k", :iterations => iterations) {
-        10_000.times { |i| test_struct.new(i, "item#{i}", i * 10) }
+        result = nil
+        10_000.times { |i| result = test_struct.new(i, "item#{i}", i * 10) }
+        result
       },
       BenchmarkRunner.run(:name => "STRUCT: Class create 10k", :iterations => iterations) {
-        10_000.times { |i| klass.new(i, "item#{i}", i * 10) }
+        result = nil
+        10_000.times { |i| result = klass.new(i, "item#{i}", i * 10) }
+        result
       },
       BenchmarkRunner.run(:name => "STRUCT: Hash read 100k", :iterations => iterations) {
         h = { :id => 1, :name => "test", :value => 100 }
-        100_000.times { h[:name] }
+        count = 0
+        100_000.times { count += h[:name].length }
+        count
       },
       BenchmarkRunner.run(:name => "STRUCT: Struct read 100k", :iterations => iterations) {
         s = test_struct.new(1, "test", 100)
-        100_000.times { s.name }
+        count = 0
+        100_000.times { count += s.name.length }
+        count
       },
       BenchmarkRunner.run(:name => "STRUCT: Class read 100k", :iterations => iterations) {
         obj = klass.new(1, "test", 100)
-        100_000.times { obj.name }
+        count = 0
+        100_000.times { count += obj.name.length }
+        count
       },
       BenchmarkRunner.run(:name => "STRUCT: Hash write 100k", :iterations => iterations) {
         h = { :id => 1, :name => "test", :value => 100 }
         100_000.times { |i| h[:name] = "test#{i}" }
+        h[:name]
       },
       BenchmarkRunner.run(:name => "STRUCT: Struct write 100k", :iterations => iterations) {
         s = test_struct.new(1, "test", 100)
         100_000.times { |i| s.name = "test#{i}" }
+        s.name
       },
       BenchmarkRunner.run(:name => "STRUCT: Class write 100k", :iterations => iterations) {
         obj = klass.new(1, "test", 100)
         100_000.times { |i| obj.name = "test#{i}" }
+        obj.name
       }
     ]
   end
@@ -1120,6 +1209,7 @@ module TechniqueBenchmarks
   end
 
   # === METAPROGRAMMING ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def metaprogramming_techniques(iterations)
     puts "\n--- Metaprogramming: dynamic method patterns ---"
 
@@ -1139,121 +1229,160 @@ module TechniqueBenchmarks
 
     [
       BenchmarkRunner.run(:name => "META: def method call 100k", :iterations => iterations) {
-        100_000.times { obj_direct.direct_method }
+        sum = 0
+        100_000.times { sum += obj_direct.direct_method }
+        sum
       },
       BenchmarkRunner.run(:name => "META: define_method call 100k", :iterations => iterations) {
-        100_000.times { obj_dynamic.dynamic_method }
+        sum = 0
+        100_000.times { sum += obj_dynamic.dynamic_method }
+        sum
       },
       BenchmarkRunner.run(:name => "META: send 100k", :iterations => iterations) {
-        100_000.times { obj_direct.send(:direct_method) }
+        sum = 0
+        100_000.times { sum += obj_direct.send(:direct_method) }
+        sum
       },
       BenchmarkRunner.run(:name => "META: respond_to?+send 100k", :iterations => iterations) {
+        sum = 0
         100_000.times {
-          obj_direct.send(:direct_method) if obj_direct.respond_to?(:direct_method)
+          sum += obj_direct.send(:direct_method) if obj_direct.respond_to?(:direct_method)
         }
+        sum
       },
       BenchmarkRunner.run(:name => "META: method().call 100k", :iterations => iterations) {
         m = obj_direct.method(:direct_method)
-        100_000.times { m.call }
+        sum = 0
+        100_000.times { sum += m.call }
+        sum
       },
       BenchmarkRunner.run(:name => "META: ivar_get 100k", :iterations => iterations) {
         obj = Object.new
         obj.instance_variable_set(:@value, 42)
-        100_000.times { obj.instance_variable_get(:@value) }
+        sum = 0
+        100_000.times { sum += obj.instance_variable_get(:@value) }
+        sum
       },
       BenchmarkRunner.run(:name => "META: ivar_set 100k", :iterations => iterations) {
         obj = Object.new
-        100_000.times { obj.instance_variable_set(:@value, 42) }
+        100_000.times { |i| obj.instance_variable_set(:@value, i) }
+        obj.instance_variable_get(:@value)
       }
     ]
   end
 
   # === EXCEPTION HANDLING ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def exception_techniques(iterations)
     puts "\n--- Exceptions: error handling overhead ---"
 
     [
       BenchmarkRunner.run(:name => "EXC: no exception 100k", :iterations => iterations) {
-        100_000.times { 1 + 1 }
+        sum = 0
+        100_000.times { sum += 1 + 1 }
+        sum
       },
       BenchmarkRunner.run(:name => "EXC: begin/rescue none 100k", :iterations => iterations) {
+        sum = 0
         100_000.times {
           begin
-            1 + 1
+            sum += 1 + 1
           rescue
-            nil
+            sum += 0
           end
         }
+        sum
       },
       BenchmarkRunner.run(:name => "EXC: raise/rescue 10k", :iterations => iterations) {
+        count = 0
         10_000.times {
           begin
             raise "error"
           rescue
-            nil
+            count += 1
           end
         }
+        count
       },
       BenchmarkRunner.run(:name => "EXC: raise/rescue msg 10k", :iterations => iterations) {
+        total_len = 0
         10_000.times {
           begin
             raise StandardError, "error message"
           rescue => e
-            e.message
+            total_len += e.message.length
           end
         }
+        total_len
       },
       BenchmarkRunner.run(:name => "EXC: throw/catch 10k", :iterations => iterations) {
+        sum = 0
         10_000.times {
-          catch(:done) { throw :done, 42 }
+          sum += catch(:done) { throw :done, 42 }
         }
+        sum
       },
       BenchmarkRunner.run(:name => "EXC: nested throw/catch 10k", :iterations => iterations) {
+        sum = 0
         10_000.times {
-          catch(:outer) {
+          sum += catch(:outer) {
             catch(:inner) {
               throw :outer, 42
             }
           }
         }
+        sum
       }
     ]
   end
 
   # === STRING FREEZING/DEDUP ===
+  # NOTE: All benchmarks accumulate and return results to prevent JIT dead code elimination
   def string_freeze_techniques(iterations)
     puts "\n--- String Freeze: deduplication patterns ---"
 
     results = []
 
     results << BenchmarkRunner.run(:name => "FREEZE: literal 100k", :iterations => iterations) {
-      100_000.times { "hello" }
+      total_len = 0
+      100_000.times { total_len += "hello".length }
+      total_len
     }
 
     results << BenchmarkRunner.run(:name => "FREEZE: .freeze 100k", :iterations => iterations) {
-      100_000.times { "hello".freeze }
+      total_len = 0
+      100_000.times { total_len += "hello".freeze.length }
+      total_len
     }
 
     # -"string" only works in Ruby 2.3+ with frozen_string_literal
     if RUBY_VERSION >= "2.3"
       results << BenchmarkRunner.run(:name => "FREEZE: -\"\" dedup 100k", :iterations => iterations) {
-        100_000.times { -"hello" }
+        total_len = 0
+        100_000.times { total_len += (-"hello").length }
+        total_len
       }
     end
 
     results << BenchmarkRunner.run(:name => "FREEZE: dup 100k", :iterations => iterations) {
       s = "hello"
-      100_000.times { s.dup }
+      total_len = 0
+      100_000.times { total_len += s.dup.length }
+      total_len
     }
 
     results << BenchmarkRunner.run(:name => "FREEZE: interpolate 100k", :iterations => iterations) {
       val = "world"
-      100_000.times { "hello #{val}" }
+      total_len = 0
+      100_000.times { total_len += "hello #{val}".length }
+      total_len
     }
 
     results << BenchmarkRunner.run(:name => "FREEZE: interpolate.freeze 100k", :iterations => iterations) {
       val = "world"
-      100_000.times { "hello #{val}".freeze }
+      total_len = 0
+      100_000.times { total_len += "hello #{val}".freeze.length }
+      total_len
     }
 
     results
